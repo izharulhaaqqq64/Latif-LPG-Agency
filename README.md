@@ -33,7 +33,7 @@ Amounts are rounded to two decimals. Gas unit pricing uses full intermediate pre
 
 ## Storage and backups
 
-Data remains in this browser's localStorage under `latif-lpg-v1`. New fields are initialized without resetting sales, customers, receipts, cylinders, parts or closing snapshots. Existing names, notes and saved records are not translated or deleted. JSON export includes the complete saved state; CSV statements contain ledger rows and running money/cylinder balances. Automated JSON restore is not implemented.
+Data remains in this browser's localStorage under `latif-lpg-v1`. New fields are initialized without resetting sales, customers, receipts, cylinders, parts or closing snapshots. Existing names, notes and saved records are not translated or deleted. JSON export includes the complete saved state; CSV statements contain ledger rows and running money/cylinder balances. Use **Save backup** to download a complete JSON backup. **Open backup** accepts current backups and older raw-state exports (up to 10 MB), validates the records and shows a preview. **Restore backup** replaces the current browser records only after confirmation; save your current backup first. A safety copy of the previous browser data is also retained locally under `latif-lpg-before-open`. Invalid files do not change current records.
 
 There is no authentication, server database, cross-device synchronization or automatic cloud backup. Publication/deployment is separate from running the app locally. The monthly report reconciles customer/inventory records and calculates net profit when recorded costs are complete. It is not statutory accounts; expenses and costs not entered in the app cannot be included.
 
@@ -48,7 +48,7 @@ Cylinder tracking includes a separate empty-cylinder inventory. Set the current 
 
 New customer returns marked **empty** add one linked empty-stock receipt per movement, including returns on customer sales. Uncheck the option for full/non-empty returns. Filling, sending to the plant or other removals are entered as empty stock movements and cannot exceed available quantity. These change empty stock, not gas kg or customer debt. Tare weights can be updated independently. Empty quantities and optional average tare weights persist in browser storage and backups.
 
-Capacity (11.8 / 15 / 45.5 kg) describes nominal gas capacity, not empty-shell mass. Cylinder tracking displays capacity-wise empty counts and estimated shell mass only when tare weights and opening quantities are known; Overview shows the empty-cylinder count. Empty-shell total uses average tare per size, so it is an estimate rather than a weighed load.
+Capacity (11.8 / 15 / 45.4 kg, with existing 45.5 kg records preserved) describes nominal gas capacity, not empty-shell mass. Cylinder tracking displays capacity-wise empty counts and estimated shell mass only when tare weights and opening quantities are known; Overview shows the empty-cylinder count. Empty-shell total uses average tare per size, so it is an estimate rather than a weighed load.
 
 The ledger shows **Time since last purchase**, refreshing every minute. Recorded purchase timestamps or local sale times support hours/minutes; date-only history explicitly says time not recorded. Manual debt entries and collections do not reset last purchase time. No old transaction is deleted when removing the 45.4 kg tracking option.
 
@@ -121,3 +121,16 @@ Unpriced gas receipts, missing gas weights, unreconciled gas stock or uncosted p
 **Pay supplier** records later payments. Supplier balances include opening debt, purchases, initial payments and later payments; overpayments and payments before the supplier opening date are rejected. Supplier account credit is purchases/debt; debit is payments. Dates and costs respect closing locks. Historical receipts before a physical cylinder count do not add that count again.
 
 Supplier cash payments, including paid-now amounts, reduce daily and period cash movement once. Bank/wallet payments do not reduce the cash total. These payments are not operating expenses and do not reduce net profit again: profit expenses inventory only through gas/parts cost of sales. Customer debt and revenue remain unchanged by supplier purchases/payments. Supplier data and links persist in the existing browser storage and JSON backup.
+
+
+## Daily rates, inventory and receipts
+
+Overview stores a selling rate per kg for each date and shows the corresponding 11.8 kg, 15 kg and 45.5 kg gas prices. Changing a rate does not change saved invoices or actual inventory costs. New customer gas invoices use today's saved rate when available.
+
+In **Gas & inventory**, search receipts by date, size or reference. **Add cylinder receipt** converts cylinder quantity and capacity into gas kg and 11.8 kg units automatically. Record the actual purchase cost for profit calculations. Use Supplier credit for supplier purchases instead of recording the same purchase twice. **Open** previews a saved receipt and offers printing.
+
+**Sales → Sold cylinders** records sales of empty containers in 11.8 kg, 15 kg and 45.4 kg sizes, including quantity, selling price, payment and optional actual container cost. Empty-container prices are separate from gas rates. Set physical empty stock first; sales deduct available empties without changing gas kg, full-cylinder stock or cylinders loaned to customers. Unpaid sales require a customer and appear in their money ledger. Missing actual costs leave the profit calculation incomplete.
+
+Sales, customer payments, supplier purchases/payments and gas receipts have receipt previews with **Print receipt / Save PDF**. Select your printer or Save as PDF in the browser print dialog. Receipts and the app show the Latif LPG Agency flame logo and business details: The Right Energy, Every Time; Palosy Road Near Shinqamar Resturent, Peshawar; Cell No: 03320981963.
+
+The selected customer ledger displays the time since their last recorded purchase, alongside the purchase date. Older date-only purchases are identified accordingly.

@@ -293,7 +293,7 @@ const assert = require('node:assert/strict');
  const beforeEmpty=await page.evaluate(()=>({complete:emptyStockSummary().complete,counts:Object.fromEntries(TRACKING_CYLINDER_SIZES.map(size=>[size,emptyQuantity(size)])),gas:gasStock()}));
  assert.equal(beforeEmpty.complete,false);
  await page.locator('#empty-stock-details > summary').click();
- for(const [capacity,qty,tare] of [['11.8','10','12'],['15','5','15'],['45.5','2','30']]){
+ for(const [capacity,qty,tare] of [['11.8','10','12'],['15','5','15'],['45.4','2','30']]){
   await page.locator('[data-action=empty-opening]').click();
   await page.locator('[name=capacity]').selectOption(capacity);
   await page.locator('[name=qty]').fill(qty);
@@ -510,6 +510,62 @@ const assert = require('node:assert/strict');
  assert.equal(await page.evaluate(()=>balance(customer('c5'))),21700);
  await page.reload();await navigate('Supplier credit');assert.match(await page.locator('#content').innerText(),/3,050/);
  await navigate('Gas & inventory');const gasText=await page.locator('#content').innerText();for(const size of ['11.8 kg cylinders','15 kg cylinders','45.4 kg cylinders'])assert.ok(gasText.includes(size));
+ // Daily rates are dated selling prices and do not change saved invoices.
+ await navigate('Overview');await page.locator('#dashboard-date').fill(dates.now);
+ const invoicesBeforeRates=await page.evaluate(()=>JSON.stringify(state.sales));
+ await page.locator('[name=perKg]').fill('100');
+ assert.match(await page.locator('#daily-rate-prices').innerText(),/1,180/);assert.match(await page.locator('#daily-rate-prices').innerText(),/1,500/);assert.match(await page.locator('#daily-rate-prices').innerText(),/4,550/);
+ await page.locator('#daily-rate-form button').click();
+ assert.equal(await page.evaluate(()=>JSON.stringify(state.sales)),invoicesBeforeRates);
+ await navigate('Sales & invoices');await page.locator('[data-action=sale]').click();assert.equal(await page.locator('[name=rate]').inputValue(),'100');await page.locator('#cancel-dialog').click();
+ // Inventory receipt quantity is converted into kg and updates counts once.
+ await navigate('Gas & inventory');const beforeConverter=await page.evaluate(()=>({kg:gasStock(),full:fullCylinderStock('11.8').qty}));
+ await page.locator('[data-action=gas-cylinder-receipt]').click();await page.locator('[name=capacity]').selectOption('11.8');await page.locator('[name=qty]').fill('2');assert.match(await page.locator('#receipt-total-kg').innerText(),/23.6 kg/);
+ await page.locator('[name=purchaseCost]').fill('2000');await page.locator('[name=note]').fill('Converter receipt ABC');await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.evaluate(value=>Math.round((gasStock()-value)*100)/100,beforeConverter.kg),23.6);
+ assert.equal((await page.evaluate(()=>fullCylinderStock('11.8'))).qty,beforeConverter.full+2);
+ await page.locator('#search').fill('ABC');assert.match(await page.locator('#content > article.card tbody').innerText(),/Converter receipt ABC/);assert.equal(await page.locator('#content > article.card tbody tr').count(),1);
+ await page.locator('[data-open-gas-receipt]').click();assert.match(await page.locator('#form-fields').innerText(),/23.6 kg received/);await page.locator('#close-dialog').click();
+ await page.locator('#search').fill('11.8 kg');assert.match(await page.locator('#content > article.card tbody').innerText(),/Converter receipt ABC/);await page.locator('#search').fill('');
+ // Save/Open round-trip, preview/cancel, validation failures and legacy compatibility.
+ const saveFile=page.waitForEvent('download');await page.locator('#save-backup').click();const savedFile=await saveFile;
+ const backupText=require('node:fs').readFileSync(await savedFile.path(),'utf8'),backup=JSON.parse(backupText);assert.equal(backup.format,'latif-lpg-backup');
+ assert.equal(await page.evaluate(payload=>validateBackup(payload).sales.length,backup),backup.data.sales.length);
+ const validation=await page.evaluate(payload=>{const bad=structuredClone(payload);bad.data.sales[0].customer='missing-customer';let rejected=false;try{validateBackup(bad)}catch{rejected=true}return {rejected,legacy:validateBackup(structuredClone(seed)).dailyRates}},backup);
+ assert.equal(validation.rejected,true);assert.deepEqual(validation.legacy,{});
+ await navigate('Daily cash sales');await page.locator('#quick-cash-form [name=amount]').fill('5');await page.locator('#quick-cash-form button').click();
+ assert.equal(await page.evaluate(()=>state.sales.length),backup.data.sales.length+1);
+ const upload={name:'business-backup.json',mimeType:'application/json',buffer:Buffer.from(backupText)};
+ await page.locator('#backup-file').setInputFiles(upload);await page.locator('dialog').waitFor({state:'visible'});assert.equal(await page.evaluate(()=>state.sales.length),backup.data.sales.length+1);await page.locator('#cancel-dialog').click();
+ assert.equal(await page.evaluate(()=>state.sales.length),backup.data.sales.length+1);
+ await page.locator('#backup-file').setInputFiles(upload);await page.getByRole('button',{name:'Restore backup'}).click();
+ assert.equal(await page.evaluate(()=>state.sales.length),backup.data.sales.length);assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('latif-lpg-before-open')).sales.length),backup.data.sales.length+1);
+ await page.reload();assert.equal(await page.evaluate(()=>state.dailyRates[today()].perKg),100);
+ await page.locator('#backup-file').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"customers":[]}')});
+ await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('Cannot open backup'));assert.equal(await page.evaluate(()=>state.sales.length),backup.data.sales.length);
+ await navigate('Automatic ledger');await page.locator('#ledger-customer').selectOption('c5');assert.match(await page.locator('.purchase-age-badge').innerText(),/Time since last purchase/);
+ // Empty container sales use container prices and empty stock, never gas prices/kg.
+ await navigate('Sales & invoices');await page.locator('[data-workspace-tab="sales:cylinders"]').click();
+ const beforeEmptySale=await page.evaluate(()=>({gas:gasStock(),full:fullCylinderStock('11.8').qty,empty:emptyQuantity('11.8'),loaned:clientCylinderTotals().total}));
+ await page.locator('[data-action=cylinder-sale]').click();await page.locator('[name=capacity]').selectOption('11.8');assert.equal(await page.locator('[name=price]').inputValue(),'');
+ await page.locator('[name=qty]').fill('999');await page.locator('[name=price]').fill('6000');await page.locator('[name=unitCost]').fill('4000');
+ await page.getByRole('button',{name:'Save entry'}).click();assert.match(await page.locator('#form-error').innerText(),/exceeds available empty/);
+ await page.locator('[name=qty]').fill('1');await page.getByRole('button',{name:'Save entry'}).click();
+ const afterEmptySale=await page.evaluate(()=>({gas:gasStock(),full:fullCylinderStock('11.8').qty,empty:emptyQuantity('11.8'),loaned:clientCylinderTotals().total,sale:state.sales[0]}));
+ assert.equal(afterEmptySale.empty,beforeEmptySale.empty-1);assert.equal(afterEmptySale.gas,beforeEmptySale.gas);assert.equal(afterEmptySale.full,beforeEmptySale.full);assert.equal(afterEmptySale.loaned,beforeEmptySale.loaned);
+ assert.equal(afterEmptySale.sale.kind,'Parts');assert.equal(afterEmptySale.sale.amount,6000);assert.equal(afterEmptySale.sale.costPerUnit,4000);assert.equal(afterEmptySale.sale.cylinderSale.type,'empty');
+ assert.match(await page.locator('#content table').innerText(),/6,000/);
+ // Receipt branding and print action work for sold containers, payments and supplier receipts.
+ await page.locator('[data-invoice]').first().click();
+ for(const text of ['LATIF LPG AGENCY','The Right Energy, Every Time','Palosy Road Near Shinqamar Resturent, Peshawar','03320981963'])assert.ok((await page.locator('.print-receipt').innerText()).includes(text));
+ assert.match(await page.locator('.print-receipt').innerText(),/11.8 kg empty containers/);
+ await page.waitForFunction(()=>document.querySelector('.receipt-brand img').complete&&document.querySelector('.receipt-brand img').naturalWidth>0);
+ await page.evaluate(()=>{window.print=()=>{window.receiptPrintCalled=true}});await page.locator('dialog [data-action=print]').click();assert.equal(await page.evaluate(()=>window.receiptPrintCalled),true);
+ await page.emulateMedia({media:'print'});assert.equal(await page.locator('.receipt-brand').evaluate(el=>getComputedStyle(el).display),'block');await page.emulateMedia({media:'screen'});
+ await page.screenshot({path:'/tmp/latif-branded-receipt.png'});await page.locator('#close-dialog').click();
+ await navigate('Automatic ledger');await page.locator('#ledger-customer').selectOption('c5');await page.locator('[data-payment-receipt]').first().click();assert.match(await page.locator('.print-receipt').innerText(),/03320981963/);await page.locator('#close-dialog').click();
+ await navigate('Supplier credit');await page.locator('[data-supplier-print-id]').first().click();assert.match(await page.locator('.print-receipt').innerText(),/LATIF LPG AGENCY/);await page.locator('#close-dialog').click();
+ assert.equal(await page.evaluate(()=>validateBackup(backupPayload()).sales.length),await page.evaluate(()=>state.sales.length));
  await page.setViewportSize({width:390,height:844});
  await page.locator('#menu').click();
  await navigate('Overview');
@@ -528,6 +584,6 @@ const assert = require('node:assert/strict');
   assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|khata|diye|wapas|hisab|zyada|nahin)\b/i);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: supplier credit gas/parts stock integration, partial payments, overpayment protection, cash/noncash treatment, debit/credit-only ledger, monthly profit and preserved workflows.');
+ console.log('PASS: branded printable receipts, empty-container sales and pricing, daily rates, search/converter, safe Save/Open, purchase age and existing business workflows.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

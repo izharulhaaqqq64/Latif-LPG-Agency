@@ -20,7 +20,7 @@ function monthlyValueCards(report){
 }
 function simpleEmptySummary(){
  const summary=emptyStockSummary();
- return `<article class="client-cylinder-total simple-empty"><div><span>Empty cylinders available</span><strong>${summary.count} pcs${summary.complete?'':' (partial)'}</strong><small>${summary.complete?'Ready for filling / plant dispatch':'Set physical opening counts in Empty stock & setup'}</small></div><p>${TRACKING_CYLINDER_SIZES.map(size=>size+' kg: '+emptyQuantity(size)).join(' · ')}</p></article>`;
+ return `<article class="client-cylinder-total simple-empty"><div><span>Empty cylinders available</span><strong>${summary.count} pcs${summary.complete?'':' (partial)'}</strong><small>${summary.complete?'Ready for filling / plant dispatch':'Set physical opening counts in Empty stock & setup'}</small></div><p>${EMPTY_SALE_SIZES.map(size=>size+' kg: '+emptyQuantity(size)).join(' · ')}</p></article>`;
 }
 function prepareSimpleCylinderForm(){
  const form=document.getElementById('entry-form'),note=form.elements.note;
