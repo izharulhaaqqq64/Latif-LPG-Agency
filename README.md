@@ -59,30 +59,44 @@ Overview and Daily cash sales use the same dated cash calculation: received cash
 New customer gas sales have an explicit payment-method selector. Older sales with no recorded payment method are counted as cash, matching the original cash-entry workflow; this assumption is shown beside the total. Existing records are not rewritten. The anonymous-entry subtotal remains separate from the total that includes all cash sales and recoveries.
 
 
-## Revenue, active customers, stock alerts and closing formulas
+## Revenue, active customers, stock alerts and reports
 
-The dashboard date selects the reporting month for monthly revenue, active customers and the daily revenue trend. Monthly revenue is gas plus parts invoice amounts, including credit sales and excluding manual debts, stock purchases and recovered debt. Active customers are unique saved customer accounts with at least one purchase in that month; anonymous sales, recoveries alone and opening balances do not count. The revenue trend compares monthly invoice totals for the last 12 months ending in the selected month, with month/year labels. It does not plot individual days.
+The dashboard date selects the reporting month for monthly revenue, active customers and the month-wise revenue trend. Monthly revenue is gas plus parts invoice amounts, including credit sales and excluding manual debts, stock purchases and recovered debt. Active customers are unique saved customer accounts with at least one purchase in that month; anonymous sales, recoveries alone and opening balances do not count. The revenue trend compares monthly invoice totals for the last 12 months ending in the selected month, with month/year labels. It does not plot individual days.
 
 Stock overview uses current gas quantities by location and tracked parts quantities. Low stock alerts trigger at or below editable thresholds: default 500 kg per gas location and 5 pieces per part. Thresholds persist in browser data and backups. Unmeasured cash gas cannot reduce recorded stock.
 
-The dashboard Monthly closing & formulas button opens the selected month's closing under Reports. Read-only equations display the actual report figures:
-
-- Customer money: opening receivables + new customer opening adjustments + invoices/other credit − customer payments = closing receivables.
-- Customer cylinders: opening quantity + dispatched − returned = closing quantity, also maintained by customer and capacity.
-- Revenue: gas invoice value + parts invoice value = monthly revenue.
-- Collections after expenses: all-method collections − operating expenses. This is not net profit or a closing cash/bank balance.
+The dashboard Monthly closing button opens the selected month's closing under Reports. Reports show calculated results without visible formula blocks.
 
 Existing closing save/reopen locks and balance carry-forward remain unchanged. Saved snapshots are used when a month is closed.
 
 
 ## Daily, weekly and monthly closing
 
-All three closing periods use the same recorded-transaction calculation. Daily closing covers one date, weekly closing runs Monday–Sunday (including weeks crossing a month/year), and monthly closing covers a calendar month. Each report derives opening balances from earlier records, activity from records inside the period, and closing balances from the stated formulas. Money and customer-cylinder balances carry forward without creating duplicate entries.
+All three closing periods use the same recorded-transaction calculation. Daily closing covers one date, weekly closing runs Monday–Sunday (including weeks crossing a month/year), and monthly closing covers a calendar month. Each report derives opening balances from earlier records, activity from records inside the period, and calculated closing balances. Money and customer-cylinder balances carry forward without creating duplicate entries.
 
 Reports include invoice revenue, collections, operating expenses, customer receivables/cylinders, recorded gas opening/arrivals/sales/closing, and cash receipts/expenses/net flow. Unknown gas weights remain unmeasured. Cash net flow excludes opening cash and unrecorded inventory payments and is not a closing till balance or net profit.
 
-Saving a period persists its snapshot in the existing browser data and locks entries through its end, including earlier dates that could change its opening. A period in progress may be incomplete; saving it freezes further entry until reopened. Reopen later dependent daily/weekly/monthly closings before earlier ones. Existing monthly snapshots are preserved; formula sections requiring fields absent from older snapshots are omitted rather than filled with invented values.
+Saving a period persists its snapshot in the existing browser data and locks entries through its end, including earlier dates that could change its opening. A period in progress may be incomplete; saving it freezes further entry until reopened. Reopen later dependent daily/weekly/monthly closings before earlier ones. Existing monthly snapshots are preserved; new financial summary values absent from older snapshots are marked unrecorded instead of invented.
 
 The ledger includes total ledger value (opening balances + invoice/other-credit debits), total received and net outstanding balance. Combined net balance offsets customer credits against customer debt. CSV export includes a totals row. Cylinder values are quantities, not monetary asset valuations.
 
 Cylinder tracking starts with total cylinders held by clients, summing positive balances for each customer and size. Unmatched negative legacy returns are shown separately and do not reduce another customer's physical count. Empty cylinders held at the agency remain a separate inventory.
+
+
+## Combined ledger and simplified tracking
+
+The ledger has a prominent **Combined total · all customers** showing the net money outstanding across all customer accounts, including when a single customer is selected. Receivables and customer credits are shown separately beside it. The selected customer's statement and totals remain below. Cylinder quantities are not converted into money without asset prices.
+
+Cylinder tracking focuses on cylinders with clients, empties available, a customer-by-size table, and Give / Receive actions. Empty-stock setup, tare weights and movements are under **Empty stock & setup**. Movement history is collapsed but retained. No transaction is deleted by simplifying the screen.
+
+## Monthly financial values
+
+The monthly report shows **Gas value**, **Parts value**, **Money in market**, **Last month closing** and **Cash**, without formula blocks:
+
+- Gas value is an estimate of recorded closing kg at the last recorded purchase cost per kg before month end. If cost is missing or quantities need reconciliation, no value is invented.
+- Parts value is historical tracked stock at its recorded costs, excluding later-month movements and untracked legacy parts.
+- Money in market is positive customer receivables at month end; customer credits do not reduce this figure.
+- Last month closing is the previous saved net customer balance, or the equivalent opening balance derived from records if no prior snapshot exists.
+- Cash is the month's recorded cash receipts less cash expenses. It excludes opening cash and unrecorded inventory payments, so it is not an actual till balance.
+
+These values are frozen in new monthly closing snapshots. Older snapshots are preserved and show missing stored values as unrecorded; reopen and save to add the new summary. Daily/weekly/monthly balances and closing locks continue to work.

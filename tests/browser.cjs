@@ -212,8 +212,8 @@ const assert = require('node:assert/strict');
  assert.equal(await monthlyCustomer.nth(5).innerText(),'1,780');
  assert.equal(await monthlyCustomer.nth(6).innerText(),'2 pcs');
  assert.equal(await monthlyCustomer.nth(9).innerText(),'2 pcs');
- assert.match(await page.locator('.closing-formulas').innerText(),/Opening balance.*closing receivables/);
- assert.match(await page.locator('#cylinder-closing-formula').innerText(),/= .* pcs/);
+ assert.equal(await page.locator('.closing-formulas').count(),0);
+ for(const label of ['Gas value','Parts value','Money in market','Last month closing','Cash'])assert.match(await page.locator('#monthly-values').innerText(),new RegExp(label));
  await page.locator('#close-month').click();
  await page.reload();
  await navigate('Monthly closing');
@@ -291,6 +291,7 @@ const assert = require('node:assert/strict');
  await page.locator('#cancel-dialog').click();
  const beforeEmpty=await page.evaluate(()=>({complete:emptyStockSummary().complete,counts:Object.fromEntries(TRACKING_CYLINDER_SIZES.map(size=>[size,emptyQuantity(size)])),gas:gasStock()}));
  assert.equal(beforeEmpty.complete,false);
+ await page.locator('#empty-stock-details > summary').click();
  for(const [capacity,qty,tare] of [['11.8','10','12'],['15','5','15'],['45.5','2','30']]){
   await page.locator('[data-action=empty-opening]').click();
   await page.locator('[name=capacity]').selectOption(capacity);
@@ -383,13 +384,15 @@ const assert = require('node:assert/strict');
  assert.equal(formula.revenue,400);assert.equal(formula.afterExpenses,80);
  await page.locator('[data-reports-view=monthly]').click();
  assert.equal(await page.locator('#closing-month').count(),1);
- assert.match(await page.locator('#money-closing-formula').innerText(),/= /);
+ assert.equal(await page.locator('.closing-formulas').count(),0);
 
  // Ledger totals, physical client count, and period boundary/carry-forward checks.
  await navigate('Automatic ledger');
  await page.locator('#ledger-customer').selectOption('c5');
  assert.equal(await page.locator('#ledger-total-balance').innerText(),'Rs. 21,700');
  const ledgerTotals=await page.evaluate(()=>ledgerValueTotals('c5'));
+ const combined=await page.evaluate(()=>money(ledgerValueTotals('').balance));
+ assert.equal(await page.locator('#combined-ledger-total').innerText(),'Rs. '+combined);
  assert.equal(ledgerTotals.debits-ledgerTotals.received,ledgerTotals.balance);
  assert.equal(await page.locator('#ledger-total-value').innerText(),'Rs. '+await page.evaluate(value=>money(value),ledgerTotals.debits));
  await navigate('Cylinder tracking');
@@ -412,7 +415,7 @@ const assert = require('node:assert/strict');
  assert.equal(gasCarry.closing,Math.round(gasCarry.stock*100)/100);assert.equal(gasCarry.cash,gasCarry.expected);
  await navigate('Reports');
  await page.locator('[data-workspace-tab="reports:day-close"]').click();
- assert.match(await page.locator('.closing-formulas').innerText(),/Daily closing formulas/);
+ assert.equal(await page.locator('.closing-formulas').count(),0);
  await page.locator('[data-period-action=save]').click();
  await page.reload();
  await navigate('Reports');
@@ -424,11 +427,19 @@ const assert = require('node:assert/strict');
  await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('closing locks'));
  await navigate('Reports');
  await page.locator('[data-workspace-tab="reports:week-close"]').click();
- assert.match(await page.locator('.closing-formulas').innerText(),/Weekly closing formulas/);
+ assert.equal(await page.locator('.closing-formulas').count(),0);
  await page.locator('[data-period-action=save]').click();
  await page.locator('[data-period-action=reopen]').click();
  await page.locator('[data-workspace-tab="reports:day-close"]').click();
  await page.locator('[data-period-action=reopen]').click();
+ const values=await page.evaluate(()=>{
+  const original=state;
+  try{
+   state={...state,stock:[{date:'2026-01-01',qty:100,purchaseCost:1000},{date:'2026-02-01',qty:999,purchaseCost:99900}],partMovements:[{date:'2026-01-01',direction:'In',qty:10,cost:20},{date:'2026-01-10',direction:'Out',qty:2,cost:20},{date:'2026-02-01',direction:'In',qty:50,cost:100}],monthClosings:{}};
+   return monthlyFinancialValues({month:'2026-01',start:'2026-01-01',end:'2026-02-01',gasClosing:80,opening:500,cashNet:150,customers:[{closing:600},{closing:-50}]});
+  }finally{state=original}
+ });
+ assert.equal(values.gasValue,800);assert.equal(values.partsValue,160);assert.equal(values.moneyInMarket,600);assert.equal(values.lastMonthClosing,500);assert.equal(values.cash,150);
  await page.setViewportSize({width:390,height:844});
  await page.locator('#menu').click();
  await navigate('Overview');
@@ -447,6 +458,6 @@ const assert = require('node:assert/strict');
   assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|khata|diye|wapas|hisab|zyada|nahin)\b/i);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: daily/weekly/monthly closing and locks, period carry-forward/boundaries, ledger totals, client cylinder count, month-wise revenue, and existing business workflows.');
+ console.log('PASS: combined ledger, simplified cylinder flow, formula-free reports, month-end gas/parts/market/previous closing/cash values, periods and preserved business workflows.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
