@@ -212,6 +212,8 @@ const assert = require('node:assert/strict');
  assert.equal(await monthlyCustomer.nth(5).innerText(),'1,780');
  assert.equal(await monthlyCustomer.nth(6).innerText(),'2 pcs');
  assert.equal(await monthlyCustomer.nth(9).innerText(),'2 pcs');
+ assert.match(await page.locator('.closing-formulas').innerText(),/Opening balance.*closing receivables/);
+ assert.match(await page.locator('#cylinder-closing-formula').innerText(),/= .* pcs/);
  await page.locator('#close-month').click();
  await page.reload();
  await navigate('Monthly closing');
@@ -324,8 +326,8 @@ const assert = require('node:assert/strict');
  await page.reload();
  await navigate('Overview');
  const overview=await page.locator('#overview-stock-stats').innerText();
- assert.equal(await page.locator('#overview-stock-stats .stat').count(),6);
- assert.equal(await page.locator('#content table').count(),0);
+ assert.equal(await page.locator('#overview-stock-stats .stat').count(),8);
+ assert.equal(await page.locator('#content table').count(),1);
  assert.match(overview,/Gas stock/);assert.match(overview,/Parts stock value/);assert.match(overview,/Daily expenses/);assert.match(overview,/Empty cylinders available/);
  assert.equal((await page.evaluate(()=>emptyStockSummary())).count,expectedCount-2);
  await navigate('Automatic ledger');
@@ -354,6 +356,35 @@ const assert = require('node:assert/strict');
  assert.equal(await page.locator('#dashboard-daily-cash').innerText(),'Rs. '+expectedDailyCash);
  await navigate('Daily cash sales');
  assert.equal(await page.locator('#sales-daily-cash').innerText(),'Rs. '+expectedDailyCash);
+ // Monthly revenue counts invoice amounts once; active customers require a purchase, not a collection.
+ const monthlyFixture=await page.evaluate(()=>{
+  const original=state;
+  try{
+   state={...state,customers:[{id:'a'},{id:'b'}],sales:[{date:'2026-01-01',customer:'a',amount:100},{date:'2026-01-02',customer:'a',amount:200},{date:'2026-01-03',customer:null,amount:300},{date:'2026-02-01',customer:'b',amount:999}],receipts:[{date:'2026-01-04',customer:'b',amount:50}]};
+   return {month:monthlyDashboardData('2026-01'),trend:revenueTrend('2026-01')};
+  }finally{state=original}
+ });
+ assert.deepEqual(monthlyFixture.month,{revenue:600,activeCustomers:1});
+ assert.equal(monthlyFixture.trend.length,31);assert.equal(monthlyFixture.trend.reduce((a,d)=>a+d.revenue,0),600);
+ await navigate('Overview');
+ assert.match(await page.locator('#overview-stock-stats').innerText(),/Monthly revenue/);
+ assert.match(await page.locator('#overview-stock-stats').innerText(),/Active customers/);
+ assert.equal(await page.locator('.revenue-trend svg').count(),1);
+ assert.match(await page.locator('.dashboard-insights').innerText(),/Stock overview/);
+ await page.locator('.alert-settings summary').click();
+ await page.locator('[name=gasKg]').fill('0');await page.locator('[name=partsQty]').fill('20');
+ await page.locator('#stock-alert-settings button').click();
+ assert.match(await page.locator('.stock-alert-list').innerText(),/Test regulator/);
+ await page.reload();
+ assert.deepEqual(await page.evaluate(()=>state.stockAlertSettings),{gasKg:0,partsQty:20});
+ const formula=await page.evaluate(()=>closingFormulaTotals({customers:[{opening:100,newOpening:50,bills:200,received:80,closing:270,cylOpening:2,out:4,inside:1,cylClosing:5}],gasSales:300,partsSales:100,collections:90,expenses:10}));
+ assert.equal(formula.opening+formula.newOpening+formula.bills-formula.received,formula.closing);
+ assert.equal(formula.cylOpening+formula.cylOut-formula.cylIn,formula.cylClosing);
+ assert.equal(formula.revenue,400);assert.equal(formula.afterExpenses,80);
+ await page.locator('[data-reports-view=monthly]').click();
+ assert.equal(await page.locator('#closing-month').count(),1);
+ assert.match(await page.locator('#money-closing-formula').innerText(),/= /);
+
  await page.setViewportSize({width:390,height:844});
  await page.locator('#menu').click();
  await navigate('Overview');
@@ -372,6 +403,6 @@ const assert = require('node:assert/strict');
   assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|khata|diye|wapas|hisab|zyada|nahin)\b/i);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: six-card dashboard, dated daily cash totals, bank/wallet/credit exclusions, cash expenses/net flow, legacy methods, and existing ledger/inventory/business workflows.');
+ console.log('PASS: active customers, monthly revenue/trend, stock alerts and persistence, monthly closing formulas, cash totals, and existing ledger/inventory/business workflows.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
