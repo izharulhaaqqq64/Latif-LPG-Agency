@@ -2,7 +2,7 @@
 
 A responsive LPG business management application. Start with `npm start` (Node.js 20+), or `PORT=3001 npm start` for another port. No runtime packages or database are required.
 
-Includes retail, wholesale and hotel/shop gas sales; separate parts sales accounting; customer khata and opening balances; credit and recoveries; gas arrivals and stock by location; cylinder arrivals and dispatch; daily reports; printable reports and invoice details; and JSON backup export.
+Includes retail, wholesale and hotel/shop gas sales; separate parts sales accounting; customer ledger and opening balances; credit and recoveries; gas arrivals and stock by location; cylinder arrivals and dispatch; daily reports; printable reports and invoice details; and JSON backup export.
 
 Gas sales reduce stock at Shop (Retail), Main godown (Wholesale), or Supply vehicle (Supply). Sales exceeding location stock and payments exceeding outstanding balances are rejected. Collections reduce customer balances. Sample records are included for demonstration, and the weekly chart is explicitly sample data.
 
@@ -18,7 +18,7 @@ With Playwright installed and Chromium available at `/usr/bin/chromium`, start t
 
 ## Daily sale, automatic ledger, and cylinder quantities
 
-Daily sales show quantity, rate, received amount, live bill total and credit balance. Use **Poora cash** or **Poora udhaar**; wholesale, supply, parts, and cylinder counts are in the expandable options. Parts labels change to pieces automatically.
+Daily sales show quantity, rate, received amount, live bill total and credit balance. Use **Paid in full** or **Full credit**; wholesale, supply, parts, and cylinder counts are in the expandable options. Parts labels change to pieces automatically.
 
 The **Automatic ledger** page derives debits, credits and running balances from opening balances, sales, sale payments, and recoveries; no duplicate manual posting is needed. Select a customer for their own ledger. All-customer mode shows the combined running balance.
 
@@ -36,7 +36,7 @@ Existing localStorage data stays in place; new parts arrays are initialized with
 
 ## Money and cylinders together, date-wise cash, monthly closing
 
-The Automatic ledger and customer khata show outstanding rupees and cylinders together. Cylinder movements appear as their own ledger rows with running quantity; linked sales are not counted twice. Negative legacy cylinder balances are labeled unmatched returns.
+The Automatic ledger and customer ledger show outstanding rupees and cylinders together. Cylinder movements appear as their own ledger rows with running quantity; linked sales are not counted twice. Negative legacy cylinder balances are labeled unmatched returns.
 
 Daily cash sales has a date selector. Entries and the bottom total belong only to that date, and new payments use the selected date. The cash-entry dialog also has an explicit date. Historical dates are allowed, future and invalid dates are rejected. Initial selection is today's date in Asia/Karachi. Existing entries keep their original saved dates.
 
@@ -48,8 +48,19 @@ Monthly closing is a customer receivables/cylinder reconciliation, not statutory
 
 ## Cylinder capacities and 11.8 kg gas units
 
-New cylinder entries select **11.8 kg**, **15 kg**, or **45.5 kg** capacity. Named sales with cylinder quantities also record a size. Returns must match the outstanding quantity for that same customer and size. Tracking, customer khata, automatic ledger and newly saved monthly closings show capacity details. Monthly snapshots retain the capacity-specific opening, sent, returned and closing quantities. Existing saved closings remain intact; older snapshots without capacity data are labeled accordingly.
+New cylinder entries select **11.8 kg**, **15 kg**, or **45.5 kg** capacity. Named sales with cylinder quantities also record a size. Returns must match the outstanding quantity for that same customer and size. Tracking, customer ledger, automatic ledger and newly saved monthly closings show capacity details. Monthly snapshots retain the capacity-specific opening, sent, returned and closing quantities. Existing saved closings remain intact; older snapshots without capacity data are labeled accordingly.
 
 Legacy movements with no capacity are kept under **Size not recorded**; they are never silently assigned 11.8 kg. To return an old unspecified cylinder, choose the old-returns option. New dispatches require an actual supported capacity. Cylinder movement tracks containers, not measured gas stock; recording a cylinder movement alone does not deduct gas kilograms.
 
 The **Gas calculator** uses a fixed **1 unit = 11.8 kg**. Convert kg, units or full-cylinder counts of the chosen capacity; enter a gas price per unit or per kg to compute the amount. Cylinder-count mode assumes full cylinders. Calculations keep full intermediate precision and round the final amount to two decimals. The calculator can prefill a direct cash entry with calculated payment and kg; no record is saved until the user saves that form. Cash gas quantities support 0.01 kg precision and the prefill refuses to silently round finer weights.
+
+
+## English interface and mixed plant purchases
+
+All application labels, descriptions, forms and validation messages are in English. Existing customer names, user-entered notes and saved records are preserved without translation.
+
+Gas calculator opens on **Plant purchase**. Add multiple cylinder rows, each with its actual capacity in kg and a whole-number quantity, then enter the plant price **per 11.8 kg unit**. Standard capacity suggestions include 11.8, 15, 45.4 and 45.5 kg; custom positive capacities to 0.01 kg are supported in purchase calculations. 45.4 and 45.5 remain distinct in customer cylinder tracking; no old sizes are renamed.
+
+The calculation is `total kg = sum(quantity × capacity)`, `units = total kg / 11.8`, and `purchase cost = units × unit price`. Units retain full precision for pricing; displayed units have up to six decimals and final money has two. For 40 × 15 kg + 10 × 45.4 kg: total weight is 1,054 kg and units are 89.3220338983…; at Rs. 1,180 per unit the purchase cost is Rs. 105,400. Line costs are individually displayed to two decimals; the final total is calculated from the unrounded overall units.
+
+**Review & add purchased gas to stock** opens a date/location confirmation. Saving records a gas arrival with the purchase cost, unit rate and cylinder breakdown, and increases the selected location's gas inventory. It does not record a retail sale, collection, customer cylinder movement or supplier payment. Monthly closing locks apply. Purchase cost and units are visible on Gas & inventory. Calculation alone does not save anything. The separate **KG / unit converter** retains single-weight, unit and full-cylinder conversions and cash-sale prefill.
