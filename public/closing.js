@@ -6,6 +6,7 @@ function validateSaleDate(date){
 }
 function assertDateOpen(date){
  if(Object.keys(state.monthClosings||{}).some(month=>month>=date.slice(0,7)))throw Error('A monthly closing locks this date. Reopen the affected months before adding entries.');
+ if(otherClosedPeriods().some(row=>date<row.end))throw Error('A daily or weekly closing locks this date. Reopen the affected periods before adding entries.');
 }
 function cylinderLabel(qty){return qty<0?`${Math.abs(qty)} unmatched returns`:`${qty} pcs`}
 // Cylinder movements are separate ledger rows; linked invoices are never counted twice.
@@ -21,10 +22,10 @@ function ledgerTable(id=''){
  return summary+table(['DATE','CUSTOMER / ENTRY','BILL','RECEIVED','OUTSTANDING Rs.','CYLINDERS DISPATCHED','RETURNED','CYLINDERS OUTSTANDING'],accountLedgerEntries(id).map(r=>{
   rupees=roundAmount(rupees+r.debit-r.credit);cylinders+=r.out-r.inside;
   return `<tr><td>${esc(r.date)}</td><td><strong>${esc(customer(r.customer)?.name||'Cash sale')}</strong><small>${esc(r.label)}</small></td><td>Rs. ${money(r.debit)}</td><td>Rs. ${money(r.credit)}</td><td><strong>Rs. ${money(rupees)}</strong></td><td>${r.out}</td><td>${r.inside}</td><td><strong>${cylinderLabel(cylinders)}</strong></td></tr>`;
- }));
+ }))+ledgerTotalsPanel(id);
 };
-function monthReport(month){
- const start=month+'-01',next=new Date(month+'-01T00:00:00Z');next.setUTCMonth(next.getUTCMonth()+1);const end=next.toISOString().slice(0,10);
+function monthReport(month){const range=closingRange('monthly',month+'-01');return periodReport(range.start,range.end,month)}
+function periodReport(start,end,label){
  const during=x=>x.date>=start&&x.date<end,before=x=>x.date<start;
  const sales=state.sales.filter(during),receipts=state.receipts.filter(during),cylinders=state.cylinders.filter(during);
  const sum=(rows,fn)=>roundAmount(rows.reduce((a,r)=>a+fn(r),0));
@@ -36,7 +37,9 @@ function monthReport(month){
   const cylOpening=sum(cc.filter(before),x=>x.direction==='Out'?x.qty:-x.qty),out=sum(cc.filter(during).filter(x=>x.direction==='Out'),x=>x.qty),inside=sum(cc.filter(during).filter(x=>x.direction==='In'),x=>x.qty);
   return {id:c.id,name:c.name,opening,newOpening,bills,received,closing:roundAmount(opening+newOpening+bills-received),cylOpening,out,inside,cylClosing:cylOpening+out-inside,cylBySize:cylinderPeriodSizes(cc,start,end)};
  });
- return {month,customers,expenses:sum((state.expenses||[]).filter(during),r=>r.amount),gasSales:sum(sales.filter(s=>s.kind==='Gas'),total),partsSales:sum(sales.filter(s=>s.kind==='Parts'),total),collections:roundAmount(sum(sales,s=>s.paid)+sum(receipts,r=>r.amount)),gasKg:sum(sales.filter(s=>s.kind==='Gas'),s=>s.qty),unmeasuredCash:sales.filter(s=>s.directCash&&!s.qty).length,partsProfit:sum(sales.filter(s=>s.partId),s=>total(s)-s.qty*s.costPerUnit),opening:sum(customers,c=>c.opening),closing:sum(customers,c=>c.closing),cylOut:sum(cylinders.filter(x=>x.direction==='Out'),x=>x.qty),cylIn:sum(cylinders.filter(x=>x.direction==='In'),x=>x.qty)};
+ const cashReceipts=roundAmount(sum(sales.filter(s=>(s.method||'Cash')==='Cash'),s=>s.paid)+sum(receipts.filter(r=>(r.method||'Cash')==='Cash'),r=>r.amount)),cashExpenses=sum((state.expenses||[]).filter(during).filter(r=>(r.method||'Cash')==='Cash'),r=>r.amount);
+ const gasOpening=roundAmount(sum(state.stock.filter(before),r=>r.qty)-sum(state.sales.filter(before).filter(s=>s.kind==='Gas'),s=>s.qty)),gasReceived=sum(state.stock.filter(during),r=>r.qty),gasSold=sum(sales.filter(s=>s.kind==='Gas'),s=>s.qty);
+ return {month:label,start,end,cashReceipts,cashExpenses,cashNet:roundAmount(cashReceipts-cashExpenses),gasOpening,gasReceived,gasClosing:roundAmount(gasOpening+gasReceived-gasSold),customers,expenses:sum((state.expenses||[]).filter(during),r=>r.amount),gasSales:sum(sales.filter(s=>s.kind==='Gas'),total),partsSales:sum(sales.filter(s=>s.kind==='Parts'),total),collections:roundAmount(sum(sales,s=>s.paid)+sum(receipts,r=>r.amount)),gasKg:sum(sales.filter(s=>s.kind==='Gas'),s=>s.qty),unmeasuredCash:sales.filter(s=>s.directCash&&!s.qty).length,partsProfit:sum(sales.filter(s=>s.partId),s=>total(s)-s.qty*s.costPerUnit),opening:sum(customers,c=>c.opening),closing:sum(customers,c=>c.closing),cylOut:sum(cylinders.filter(x=>x.direction==='Out'),x=>x.qty),cylIn:sum(cylinders.filter(x=>x.direction==='In'),x=>x.qty)};
 }
 function monthlyPage(){
  const saved=state.monthClosings[closingMonth],r=saved?.report||monthReport(closingMonth);
@@ -53,7 +56,7 @@ document.addEventListener('click',e=>{
  const before=structuredClone(state);
  try{
   if(e.target.closest('#close-month'))state.monthClosings[closingMonth]={report:monthReport(closingMonth),savedAt:new Date().toLocaleString('en-PK',{timeZone:'Asia/Karachi'}),createdAt:new Date().toISOString()};
-  else {if(Object.keys(state.monthClosings).some(month=>month>closingMonth))throw Error('Reopen later closed months first.');delete state.monthClosings[closingMonth];}
+  else {ensureClosingCanReopen('monthly',closingMonth);if(Object.keys(state.monthClosings).some(month=>month>closingMonth))throw Error('Reopen later closed months first.');delete state.monthClosings[closingMonth];}
   save();render();toast(state.monthClosings[closingMonth]?'Monthly closing saved':'Month reopened');
  }catch(err){state=before;toast(err.message)}
 });

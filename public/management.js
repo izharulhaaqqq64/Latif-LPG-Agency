@@ -68,7 +68,7 @@ function expensesPage(){
  const rows=state.expenses.filter(e=>e.date===expenseDate&&`${e.category} ${e.note}`.toLowerCase().includes(query.toLowerCase()));
  return `<div class="section-toolbar"><label class="field">Expense date<input id="expense-date" type="date" max="${today()}" value="${expenseDate}"></label><button class="button primary" data-action="expense">＋ Operating expense</button></div><div class="stats">${stat('Expenses on selected date',money(expensesFor(expenseDate)),'↘',expenseDate)}${stat('Recorded expenses',state.expenses.filter(e=>e.date===expenseDate).length,'▤','All categories','')}</div><article class="card">${table(['DATE','CATEGORY','DESCRIPTION','METHOD','AMOUNT'],rows.map(e=>`<tr><td>${esc(e.date)}</td><td>${esc(e.category)}</td><td>${esc(e.note)}</td><td>${esc(e.method)}</td><td><strong>Rs. ${money(e.amount)}</strong></td></tr>`))}</article><p class="card-subtitle">Operating expenses are separate from gas and parts stock purchases. Collections after expenses is not a full bank or cash balance.</p>`;
 }
-function reportsPage(){return workspaceTabs('reports',[['daily','Daily report'],['monthly','Monthly closing']],reportsView)+(reportsView==='monthly'?monthlyPage():`<div class="section-toolbar"><input id="report-date" class="search" type="date" value="${reportDate}" max="${today()}"><button class="button secondary" data-action="export">↓ Export backup</button></div><div id="report-content">${report(reportDate)}</div>`)}
+function reportsPage(){return workspaceTabs('reports',[['daily','Daily report'],['day-close','Daily closing'],['week-close','Weekly closing'],['monthly','Monthly closing']],reportsView)+(reportsView==='monthly'?monthlyPage():reportsView==='day-close'?periodClosingPage('daily'):reportsView==='week-close'?periodClosingPage('weekly'):`<div class="section-toolbar"><input id="report-date" class="search" type="date" value="${reportDate}" max="${today()}"><button class="button secondary" data-action="export">↓ Export backup</button></div><div id="report-content">${report(reportDate)}</div>`)}
 const baseDailyReport=report;
 report=function(date){
  const received=state.sales.filter(s=>s.date===date).reduce((a,s)=>a+s.paid,0)+state.receipts.filter(r=>r.date===date).reduce((a,r)=>a+r.amount,0),spent=expensesFor(date);
@@ -79,6 +79,7 @@ function csvValue(value){let text=String(value??'');if(/^[=+\-@\t\r]/.test(text)
 function exportStatement(){
  let amount=0,cylinders=0;
  const rows=[['Date','Customer','Description','Debit','Credit','Balance','Cylinders out','Cylinders in','Cylinder balance'],...accountLedgerEntries(bookCustomer).map(r=>{amount=roundAmount(amount+r.debit-r.credit);cylinders+=r.out-r.inside;return [r.date,customer(r.customer)?.name||'Cash sale',r.label,r.debit,r.credit,amount,r.out,r.inside,cylinders]})];
+ const totals=ledgerValueTotals(bookCustomer);rows.push(['TOTAL','','Opening + invoices + other credit',totals.debits,totals.received,totals.balance,'','',cylinders]);
  downloadText(`customer-statement-${today()}.csv`,rows.map(row=>row.map(csvValue).join(',')).join('\r\n'),'text/csv;charset=utf-8');
 }
 let reminderText='';

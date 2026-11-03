@@ -12,7 +12,7 @@ To update, export a backup, close the server, extract the latest ZIP and start t
 
 ## One workspace per task
 
-- **Overview:** eight cards for sales, monthly revenue, active customers, gas stock, parts stock value, outstanding credit, daily expenses and empty-cylinder count, plus a dated Total daily cash panel, daily revenue trend, current stock by location and low-stock alerts. Inventory and account balances show the current position; sales, cash and expenses use the selected date. Detailed weights and transaction tables remain in their own sections. Initial demo records are retained and included in totals.
+- **Overview:** eight cards for sales, monthly revenue, active customers, gas stock, parts stock value, outstanding credit, daily expenses and empty-cylinder count, plus a dated Total daily cash panel, month-by-month revenue trend, current stock by location and low-stock alerts. Inventory and account balances show the current position; sales, cash and expenses use the selected date. Detailed weights and transaction tables remain in their own sections. Initial demo records are retained and included in totals.
 - **Sales:** Daily cash sales and Customer sales & invoices tabs. Anonymous cash entries require only an amount, with separate entries/totals for each selected date. Optional kg reduces Shop stock. Named sales support full/partial payment, credit, retail/wholesale/supply and linked cylinder movements.
 - **Money & cylinder ledger:** one customer-selectable money/cylinder statement, without separate account or payment-history tabs. Customer, credit-entry, collection, due-date, reminder, CSV and print actions remain in the ledger. The selected customer summary shows money owed, cylinder sizes, last purchase date/time and elapsed time since purchase. Record other debts using Credit entry; gas invoices already post automatically and must not be manually reposted. Collections reduce debt. Statements can be printed or downloaded as CSV. Reminder drafts can be reviewed and downloaded locally; the app sends no messages.
 - **Gas & inventory:** gas arrivals, plant purchase costs and all godown/location balances together. Retail draws from Shop, wholesale from Main godown and supply from Supply vehicle.
@@ -20,7 +20,7 @@ To update, export a backup, close the server, extract the latest ZIP and start t
 - **Gas parts:** stock, actual cost/selling price/profit, and movement-history tabs. Purchases increase stock; cash sales decrease it. Actual cost uses a weighted average; each sale preserves its cost for gross profit. Untracked legacy invoices remain intact without invented costs.
 - **Gas calculator:** mixed plant purchases at a price per 11.8 kg unit, plus the KG/unit converter. Add cylinder quantities and actual capacities; `total kg = sum(quantity × capacity)`, `units = kg / 11.8`, and `cost = units × unit price`. For 40 × 15 kg + 10 × 45.4 kg, weight is 1,054 kg and units are 89.3220338983…; at Rs. 1,180/unit, cost is Rs. 105,400. Review and save to add purchased gas and cost to inventory. This is not a customer sale or supplier payment. 45.4 and 45.5 kg remain separate sizes.
 - **Expenses:** dated operating expenses with category, payment method and note. These are separate from inventory purchases. Daily and monthly reports include them; collections after expenses is not a complete cash/bank balance or net profit.
-- **Reports:** Daily report and Monthly closing tabs. Closing snapshots include opening/bills/manual credit/receipts/closing money, capacity-specific cylinder quantities and expenses. Balances carry forward by calculation without duplicate entries. Saved months and earlier dates that affect them are locked; reopen dependent closings newest first to correct a period.
+- **Reports:** Daily report, Daily closing, Weekly closing and Monthly closing tabs. Closing snapshots include opening/bills/manual credit/receipts/closing money, capacity-specific cylinder quantities and expenses. Balances carry forward by calculation without duplicate entries. Saved months and earlier dates that affect them are locked; reopen dependent closings newest first to correct a period.
 
 ## Credit and dates
 
@@ -61,7 +61,7 @@ New customer gas sales have an explicit payment-method selector. Older sales wit
 
 ## Revenue, active customers, stock alerts and closing formulas
 
-The dashboard date selects the reporting month for monthly revenue, active customers and the daily revenue trend. Monthly revenue is gas plus parts invoice amounts, including credit sales and excluding manual debts, stock purchases and recovered debt. Active customers are unique saved customer accounts with at least one purchase in that month; anonymous sales, recoveries alone and opening balances do not count. The current-month trend ends today; past months show their full calendar. No future days are shown as zero revenue for the current month.
+The dashboard date selects the reporting month for monthly revenue, active customers and the daily revenue trend. Monthly revenue is gas plus parts invoice amounts, including credit sales and excluding manual debts, stock purchases and recovered debt. Active customers are unique saved customer accounts with at least one purchase in that month; anonymous sales, recoveries alone and opening balances do not count. The revenue trend compares monthly invoice totals for the last 12 months ending in the selected month, with month/year labels. It does not plot individual days.
 
 Stock overview uses current gas quantities by location and tracked parts quantities. Low stock alerts trigger at or below editable thresholds: default 500 kg per gas location and 5 pieces per part. Thresholds persist in browser data and backups. Unmeasured cash gas cannot reduce recorded stock.
 
@@ -73,3 +73,16 @@ The dashboard Monthly closing & formulas button opens the selected month's closi
 - Collections after expenses: all-method collections − operating expenses. This is not net profit or a closing cash/bank balance.
 
 Existing closing save/reopen locks and balance carry-forward remain unchanged. Saved snapshots are used when a month is closed.
+
+
+## Daily, weekly and monthly closing
+
+All three closing periods use the same recorded-transaction calculation. Daily closing covers one date, weekly closing runs Monday–Sunday (including weeks crossing a month/year), and monthly closing covers a calendar month. Each report derives opening balances from earlier records, activity from records inside the period, and closing balances from the stated formulas. Money and customer-cylinder balances carry forward without creating duplicate entries.
+
+Reports include invoice revenue, collections, operating expenses, customer receivables/cylinders, recorded gas opening/arrivals/sales/closing, and cash receipts/expenses/net flow. Unknown gas weights remain unmeasured. Cash net flow excludes opening cash and unrecorded inventory payments and is not a closing till balance or net profit.
+
+Saving a period persists its snapshot in the existing browser data and locks entries through its end, including earlier dates that could change its opening. A period in progress may be incomplete; saving it freezes further entry until reopened. Reopen later dependent daily/weekly/monthly closings before earlier ones. Existing monthly snapshots are preserved; formula sections requiring fields absent from older snapshots are omitted rather than filled with invented values.
+
+The ledger includes total ledger value (opening balances + invoice/other-credit debits), total received and net outstanding balance. Combined net balance offsets customer credits against customer debt. CSV export includes a totals row. Cylinder values are quantities, not monetary asset valuations.
+
+Cylinder tracking starts with total cylinders held by clients, summing positive balances for each customer and size. Unmatched negative legacy returns are shown separately and do not reduce another customer's physical count. Empty cylinders held at the agency remain a separate inventory.
