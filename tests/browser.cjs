@@ -110,6 +110,52 @@ const assert = require('node:assert/strict');
  await page.locator('#ledger-customer').selectOption('c1');
  assert.equal(await page.locator('#account-money').innerText(),'Rs. 12,800');
  assert.equal(await page.locator('#account-cylinders').innerText(),'4 pcs');
+ assert.match(await page.locator('#account-cylinder-sizes').innerText(),/Size not recorded: 4 pcs/);
+ // Capacity-specific dispatches and returns cannot cancel another cylinder size.
+ await page.locator('nav [data-page="Cylinder tracking"]').click();
+ for(const [capacity,qty] of [['15','2'],['45.5','1']]){
+  await page.locator('[data-action=cylinder]').click();
+  await page.locator('[name=customer]').selectOption('c5');
+  await page.locator('[name=capacity]').selectOption(capacity);
+  await page.locator('[name=qty]').fill(qty);
+  await page.getByRole('button',{name:'Save entry'}).click();
+ }
+ await page.locator('[data-action=cylinder]').click();
+ await page.locator('[name=customer]').selectOption('c5');
+ await page.locator('[name=direction]').selectOption('In');
+ await page.locator('[name=qty]').fill('1');
+ await page.getByRole('button',{name:'Save entry'}).click();
+ assert.match(await page.locator('#form-error').innerText(),/size/);
+ await page.locator('[name=capacity]').selectOption('15');
+ await page.getByRole('button',{name:'Save entry'}).click();
+ await page.locator('nav [data-page="Automatic ledger"]').click();
+ await page.locator('#ledger-customer').selectOption('c5');
+ assert.equal(await page.locator('#account-cylinders').innerText(),'2 pcs');
+ assert.match(await page.locator('#account-cylinder-sizes').innerText(),/15 kg: 1 pcs/);
+ assert.match(await page.locator('#account-cylinder-sizes').innerText(),/45.5 kg: 1 pcs/);
+ assert.match(await page.locator('#ledger-table').innerText(),/Cylinder.*15 kg/);
+ // Calculator: kg <-> units and unit pricing, without posting a sale.
+ await page.locator('nav [data-page="Gas calculator"]').click();
+ await page.locator('[name=calcQuantity]').fill('23.6');
+ await page.locator('[name=calcRate]').fill('1180');
+ let calcText=await page.locator('#calculator-result').innerText();
+ assert.match(calcText,/units\s*2/);assert.match(calcText,/2,360/);
+ await page.locator('[name=calcMode]').selectOption('units');
+ await page.locator('[name=calcQuantity]').fill('2');
+ assert.match(await page.locator('#calculator-result').innerText(),/kg\s*23\.6/);
+ await page.locator('[name=calcMode]').selectOption('cylinders');
+ await page.locator('[name=calcSize]').selectOption('45.5');
+ await page.locator('[name=calcQuantity]').fill('2');
+ await page.locator('[name=calcBasis]').selectOption('kg');
+ await page.locator('[name=calcRate]').fill('100');
+ assert.match(await page.locator('#calculator-result').innerText(),/kg\s*91/);
+ assert.match(await page.locator('#calculator-result').innerText(),/9,100/);
+ const beforeCalculator=await page.evaluate(()=>state.sales.length);
+ await page.locator('#calculator-cash').click();
+ assert.equal(await page.locator('[name=gasQty]').inputValue(),'91');
+ assert.equal(await page.locator('[name=amount]').inputValue(),'9100');
+ await page.locator('#cancel-dialog').click();
+ assert.equal(await page.evaluate(()=>state.sales.length),beforeCalculator);
  // Historical daily entries are saved to the selected day, not to today.
  const dates=await page.evaluate(()=>{const now=today(),d=new Date(now+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-1);const previous=d.toISOString().slice(0,10);d.setUTCDate(0);return {now,previous,priorMonthEnd:d.toISOString().slice(0,10)}});
  await page.locator('nav [data-page="Daily cash sales"]').click();
@@ -137,6 +183,9 @@ const assert = require('node:assert/strict');
  await page.reload();
  await page.locator('nav [data-page="Monthly closing"]').click();
  assert.equal(await page.locator('#reopen-month').count(),1);
+ const savedSizes=await page.evaluate(()=>state.monthClosings[today().slice(0,7)].report.customers.find(c=>c.id==='c5').cylBySize);
+ assert.equal(savedSizes.find(x=>x.capacity==='15').closing,1);
+ assert.equal(savedSizes.find(x=>x.capacity==='45.5').closing,1);
  await page.locator('nav [data-page="Daily cash sales"]').click();
  await page.locator('#quick-cash-form [name=amount]').fill('999');
  await page.locator('#quick-cash-form button').click();
@@ -156,12 +205,12 @@ const assert = require('node:assert/strict');
  await page.locator('nav [data-page="Overview"]').click();
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
  await page.screenshot({path:'/tmp/latif-mobile.png',fullPage:true});
- for(const screen of ['Daily cash sales','Gas parts','Monthly closing','Automatic ledger']){
+ for(const screen of ['Daily cash sales','Gas parts','Monthly closing','Automatic ledger','Gas calculator','Cylinder tracking']){
   await page.locator('#menu').click();
   await page.locator(`nav [data-page="${screen}"]`).click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: date-separated cash sales, combined money/cylinder ledger, monthly opening/closing/carry-forward, closing lock/reopen/persistence, parts and existing sales, mobile layouts.');
+ console.log('PASS: cylinder capacities and size-matched returns, capacity ledger, 11.8 kg unit calculator and cash prefill, date-wise sales, monthly closing/carry-forward, parts and mobile layouts.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

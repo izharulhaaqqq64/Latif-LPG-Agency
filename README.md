@@ -45,3 +45,11 @@ Monthly closing shows customer opening rupees, new-account opening adjustments, 
 Saving a closing locks new entries for that month and earlier dates that could alter the closing. To correct an entry period, reopen dependent closings in newest-to-oldest order. Current-month named sales, receipts, customers, gas stock, cylinder and parts entries also respect the lock. Reopening removes only the saved closing, not business entries. The report includes unmatched historical cylinder returns and unmeasured cash gas entries rather than assuming missing quantities.
 
 Monthly closing is a customer receivables/cylinder reconciliation, not statutory accounts or a complete profit-and-loss report. Like other records, closing snapshots remain browser-local and are included in Export backup.
+
+## Cylinder capacities and 11.8 kg gas units
+
+New cylinder entries select **11.8 kg**, **15 kg**, or **45.5 kg** capacity. Named sales with cylinder quantities also record a size. Returns must match the outstanding quantity for that same customer and size. Tracking, customer khata, automatic ledger and newly saved monthly closings show capacity details. Monthly snapshots retain the capacity-specific opening, sent, returned and closing quantities. Existing saved closings remain intact; older snapshots without capacity data are labeled accordingly.
+
+Legacy movements with no capacity are kept under **Size not recorded**; they are never silently assigned 11.8 kg. To return an old unspecified cylinder, choose the old-returns option. New dispatches require an actual supported capacity. Cylinder movement tracks containers, not measured gas stock; recording a cylinder movement alone does not deduct gas kilograms.
+
+The **Gas calculator** uses a fixed **1 unit = 11.8 kg**. Convert kg, units or full-cylinder counts of the chosen capacity; enter a gas price per unit or per kg to compute the amount. Cylinder-count mode assumes full cylinders. Calculations keep full intermediate precision and round the final amount to two decimals. The calculator can prefill a direct cash entry with calculated payment and kg; no record is saved until the user saves that form. Cash gas quantities support 0.01 kg precision and the prefill refuses to silently round finer weights.
