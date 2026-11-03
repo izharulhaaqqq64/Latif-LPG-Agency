@@ -324,7 +324,9 @@ const assert = require('node:assert/strict');
  await page.reload();
  await navigate('Overview');
  const overview=await page.locator('#overview-stock-stats').innerText();
- assert.match(overview,/Gas stock/);assert.match(overview,/Parts stock value/);assert.match(overview,/Expenses this month/);assert.match(overview,/Empty cylinders available/);
+ assert.equal(await page.locator('#overview-stock-stats .stat').count(),6);
+ assert.equal(await page.locator('#content table').count(),0);
+ assert.match(overview,/Gas stock/);assert.match(overview,/Parts stock value/);assert.match(overview,/Daily expenses/);assert.match(overview,/Empty cylinders available/);
  assert.equal((await page.evaluate(()=>emptyStockSummary())).count,expectedCount-2);
  await navigate('Automatic ledger');
  await page.locator('#ledger-customer').selectOption('c5');
@@ -334,6 +336,24 @@ const assert = require('node:assert/strict');
   try{state.sales=[{id:'t',customer:'age-test',date:'2026-01-02',createdAt:'2026-01-02T05:00:00Z'}];const timed=purchaseAge('age-test',Date.parse('2026-01-02T07:30:00Z'));state.sales=[{id:'t',customer:'age-test',date:'2026-01-01'}];return {timed,dateOnly:purchaseAge('age-test',Date.parse('2026-01-02T07:30:00Z'))}}finally{state.sales=old}
  });
  assert.equal(ages.timed,'2 hr 30 min ago');assert.equal(ages.dateOnly,'1 day ago (time not recorded)');
+ // Daily cash includes sales + cash recoveries, excludes credit/bank/wallet, and subtracts only cash expenses for net flow.
+ const cashTotals=await page.evaluate(()=>{
+  const original=state;
+  try{
+   state={...state,sales:[{date:'2026-01-02',paid:100,method:'Cash'},{date:'2026-01-02',paid:50},{date:'2026-01-02',paid:0,method:'Cash'},{date:'2026-01-02',paid:200,method:'Bank transfer'},{date:'2026-01-02',paid:300,method:'Easypaisa / JazzCash'},{date:'2026-01-01',paid:999,method:'Cash'}],receipts:[{date:'2026-01-02',amount:25,method:'Cash'},{date:'2026-01-02',amount:100,method:'Bank transfer'}],expenses:[{date:'2026-01-02',amount:10,method:'Cash'},{date:'2026-01-02',amount:50,method:'Bank transfer'}]};
+   return {current:dailyCash('2026-01-02'),previous:dailyCash('2026-01-01')};
+  }finally{state=original}
+ });
+ assert.deepEqual(cashTotals.current,{cashSales:150,recoveries:25,expenses:10,total:175,net:165});
+ assert.equal(cashTotals.previous.total,999);
+ await navigate('Overview');
+ await page.locator('#dashboard-date').fill(dates.previous);
+ assert.equal(await page.locator('#dashboard-daily-cash').innerText(),'Rs. 125');
+ await page.locator('#dashboard-date').fill(dates.now);
+ const expectedDailyCash=await page.evaluate(()=>money(dailyCash(today()).total));
+ assert.equal(await page.locator('#dashboard-daily-cash').innerText(),'Rs. '+expectedDailyCash);
+ await navigate('Daily cash sales');
+ assert.equal(await page.locator('#sales-daily-cash').innerText(),'Rs. '+expectedDailyCash);
  await page.setViewportSize({width:390,height:844});
  await page.locator('#menu').click();
  await navigate('Overview');
@@ -352,6 +372,6 @@ const assert = require('node:assert/strict');
   assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|khata|diye|wapas|hisab|zyada|nahin)\b/i);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: single money/cylinder ledger, last-purchase elapsed time, overview inventory/expenses, retired tracking size, empty stock/tare/persistence, and existing business workflows.');
+ console.log('PASS: six-card dashboard, dated daily cash totals, bank/wallet/credit exclusions, cash expenses/net flow, legacy methods, and existing ledger/inventory/business workflows.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
