@@ -106,17 +106,62 @@ const assert = require('node:assert/strict');
  assert.match(await page.locator('#content table').innerText(),/18 pcs/);
  await page.locator('nav [data-page="Automatic ledger"]').click();
  assert.match(await page.locator('#ledger-table').innerText(),/Cash sale/);
+ // A customer's money and cylinder balance are visible together.
+ await page.locator('#ledger-customer').selectOption('c1');
+ assert.equal(await page.locator('#account-money').innerText(),'Rs. 12,800');
+ assert.equal(await page.locator('#account-cylinders').innerText(),'4 pcs');
+ // Historical daily entries are saved to the selected day, not to today.
+ const dates=await page.evaluate(()=>{const now=today(),d=new Date(now+'T00:00:00Z');d.setUTCDate(d.getUTCDate()-1);const previous=d.toISOString().slice(0,10);d.setUTCDate(0);return {now,previous,priorMonthEnd:d.toISOString().slice(0,10)}});
+ await page.locator('nav [data-page="Daily cash sales"]').click();
+ await page.locator('#cash-date').fill(dates.previous);
+ await page.locator('#quick-cash-form [name=amount]').fill('125');
+ await page.locator('#quick-cash-form button').click();
+ assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 125');
+ await page.locator('#cash-date').fill(dates.now);
+ assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 750');
+ // Seed prior-month activity to verify opening/carry-forward boundary math.
+ await page.evaluate(({priorMonthEnd})=>{
+  const data=JSON.parse(localStorage.getItem('latif-lpg-v1'));
+  data.sales.push({id:'900',customer:'c2',kind:'Gas',channel:'Retail',qty:1,rate:1000,paid:0,date:priorMonthEnd});
+  data.cylinders.push({id:'prior-cyl',customer:'c2',direction:'Out',qty:2,date:priorMonthEnd,note:'Prior month'});
+  localStorage.setItem('latif-lpg-v1',JSON.stringify(data));
+ },dates);
+ await page.reload();
+ await page.locator('nav [data-page="Monthly closing"]').click();
+ const monthlyCustomer=page.locator('#content table tbody tr').filter({hasText:'Ahmed Ali'}).locator('td');
+ assert.equal(await monthlyCustomer.nth(1).innerText(),'1,000');
+ assert.equal(await monthlyCustomer.nth(5).innerText(),'1,780');
+ assert.equal(await monthlyCustomer.nth(6).innerText(),'2 pcs');
+ assert.equal(await monthlyCustomer.nth(9).innerText(),'2 pcs');
+ await page.locator('#close-month').click();
+ await page.reload();
+ await page.locator('nav [data-page="Monthly closing"]').click();
+ assert.equal(await page.locator('#reopen-month').count(),1);
+ await page.locator('nav [data-page="Daily cash sales"]').click();
+ await page.locator('#quick-cash-form [name=amount]').fill('999');
+ await page.locator('#quick-cash-form button').click();
+ await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('closing save'));
+ assert.match(await page.locator('#toast').textContent(),/closing save/);
+ assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 750');
+ const carried=await page.evaluate(()=>{const d=new Date(today().slice(0,7)+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+1);return monthReport(d.toISOString().slice(0,7)).customers.find(c=>c.id==='c2')});
+ assert.equal(carried.opening,1780);assert.equal(carried.cylOpening,2);
+ await page.locator('nav [data-page="Monthly closing"]').click();
+ await page.locator('#reopen-month').click();
+ await page.locator('nav [data-page="Daily cash sales"]').click();
+ await page.locator('#quick-cash-form [name=amount]').fill('10');
+ await page.locator('#quick-cash-form button').click();
+ assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 760');
  await page.setViewportSize({width:390,height:844});
  await page.locator('#menu').click();
  await page.locator('nav [data-page="Overview"]').click();
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
  await page.screenshot({path:'/tmp/latif-mobile.png',fullPage:true});
- for(const screen of ['Daily cash sales','Gas parts']){
+ for(const screen of ['Daily cash sales','Gas parts','Monthly closing','Automatic ledger']){
   await page.locator('#menu').click();
   await page.locator(`nav [data-page="${screen}"]`).click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: named sales, amount-only cash totals, ledger, parts stock, weighted costs, realized profit, oversell rejection, cylinders, persistence and mobile layout.');
+ console.log('PASS: date-separated cash sales, combined money/cylinder ledger, monthly opening/closing/carry-forward, closing lock/reopen/persistence, parts and existing sales, mobile layouts.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

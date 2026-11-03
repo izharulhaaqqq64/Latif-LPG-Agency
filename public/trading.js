@@ -1,9 +1,10 @@
 state.partItems ??= [];
 state.partMovements ??= [];
 let partsView='stock';
+let cashDate=today();
 function cashPage(){
- const rows=state.sales.filter(s=>s.directCash&&s.date===today());
- return `<article class="card cash-entry"><h2>Aaj ki cash sale</h2><p>Sirf payment likhein aur Enter dabayein. Customer ka naam zaroori nahin.</p><form id="quick-cash-form"><label class="field">Payment / raqam (Rs.)<input name="amount" type="number" min="0.01" step="0.01" required placeholder="Misal: 500" autofocus></label><button class="button primary">＋ Payment save karein</button></form><p class="card-subtitle">Yeh cash gas sale hai, purana udhaar ki wasooli nahin. Kg dene ke liye “Cash entry” button use karein; kg ke baghair gas stock nahin ghatega.</p></article><article class="card" style="margin-top:20px">${table(['TIME','PAYMENT'],rows.map(s=>`<tr><td>${esc(s.time)}</td><td><strong>Rs. ${money(total(s))}</strong></td></tr>`))}<div class="cash-day-total"><span>Aaj ki direct cash entries · ${rows.length} payments</span><strong id="cash-day-total">Rs. ${money(rows.reduce((a,s)=>a+total(s),0))}</strong></div></article>`;
+ const rows=state.sales.filter(s=>s.directCash&&s.date===cashDate);
+ return `<article class="card cash-entry"><div class="section-toolbar"><h2>Date-wise daily cash sale</h2><label class="field">Sale ki date<input id="cash-date" type="date" value="${esc(cashDate)}" max="${today()}" required></label></div><p class="selected-date">Entries aur total: <strong>${esc(cashDate)}</strong></p><p>Sirf payment likhein aur Enter dabayein. Customer ka naam zaroori nahin.</p><form id="quick-cash-form"><label class="field">Payment / raqam (Rs.)<input name="amount" type="number" min="0.01" step="0.01" required placeholder="Misal: 500" autofocus></label><button class="button primary">＋ Payment save karein</button></form><p class="card-subtitle">Yeh cash gas sale hai, purana udhaar ki wasooli nahin. Kg dene ke liye “Cash entry” button use karein; kg ke baghair gas stock nahin ghatega.</p></article><article class="card" style="margin-top:20px">${table(['TIME','PAYMENT'],rows.map(s=>`<tr><td>${esc(s.time)}</td><td><strong>Rs. ${money(total(s))}</strong></td></tr>`))}<div class="cash-day-total"><span>${esc(cashDate)} ki direct cash entries · ${rows.length} payments</span><strong id="cash-day-total">Rs. ${money(rows.reduce((a,s)=>a+total(s),0))}</strong></div></article>`;
 }
 function partInventory(id){
  let qty=0,value=0;
@@ -28,7 +29,7 @@ function openTradingForm(kind){
  document.getElementById('dialog-title').textContent=titles[kind];
  const partSelect=()=>select('Part','part',state.partItems.map(p=>[p.id,p.name]));
  let html='';
- if(kind==='cash')html=field('Sirf payment / raqam (Rs.)','amount','number','','min="0.01" step="0.01"')+`<details class="sale-options"><summary>Gas kg bhi record karein (optional)</summary><label class="field">Gas sold (kg)<input name="gasQty" type="number" min="0.01" step="0.01" placeholder="Optional"></label></details><p class="card-subtitle">Naam ki zaroorat nahin. Payment sales aur collections mein khud add hogi. Kg enter karne par Shop ka gas stock kam hoga.</p>`;
+ if(kind==='cash')html=field('Sale ki date','saleDate','date',page==='Daily cash sales'?cashDate:today(),`max="${today()}"`)+field('Sirf payment / raqam (Rs.)','amount','number','','min="0.01" step="0.01"')+`<details class="sale-options"><summary>Gas kg bhi record karein (optional)</summary><label class="field">Gas sold (kg)<input name="gasQty" type="number" min="0.01" step="0.01" placeholder="Optional"></label></details><p class="card-subtitle">Naam ki zaroorat nahin. Payment sales aur collections mein khud add hogi. Kg enter karne par Shop ka gas stock kam hoga.</p>`;
  if(kind==='part-new')html=field('Part ka naam','name','text','','maxlength="80"')+field('Opening quantity (pieces)','qty','number','0','min="0" step="1"')+field('Actual / purchase price per piece (Rs.)','cost','number','','min="0" step="0.01"')+field('Selling price per piece (Rs.)','rate','number','','min="0.01" step="0.01"');
  if(kind==='part-buy')html=partSelect()+field('Khareedi quantity (pieces)','qty','number','','min="1" step="1"')+field('Actual purchase price per piece (Rs.)','cost','number','','min="0" step="0.01"')+field('Selling price per piece (Rs.)','rate','number',state.partItems[0].sellingRate,'min="0.01" step="0.01"');
  if(kind==='part-sale')html=partSelect()+field('Sale quantity (pieces)','qty','number','1','min="1" step="1"')+field('Selling price per piece (Rs.)','rate','number',state.partItems[0].sellingRate,'min="0.01" step="0.01"')+'<p class="card-subtitle">Cash sale: total payment, stock minus aur gross profit automatic record honge.</p>';
@@ -37,19 +38,21 @@ function openTradingForm(kind){
  document.querySelector('.dialog-actions').style.display='flex';
  document.getElementById('entry-dialog').showModal();
 }
-function recordCash(amount,gasQty=0){
+function recordCash(amount,gasQty=0,date=cashDate){
+ validateSaleDate(date);assertDateOpen(date);
  if(!Number.isFinite(amount)||amount<=0)throw Error('Payment 0 se zyada honi chahiye.');
  if(!Number.isFinite(gasQty)||gasQty<0)throw Error('Gas kg sahi enter karein.');
  if(gasQty>locationStock('Shop'))throw Error('Shop mein itna gas available nahin hai.');
- const s={id:nextInvoice(),date:today(),createdAt:new Date().toISOString(),time:new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'}),customer:null,kind:'Gas',channel:'Retail',item:'Cash gas sale',qty:gasQty,rate:gasQty?amount/gasQty:0,amount:roundAmount(amount),paid:roundAmount(amount),directCash:true};
+ const s={id:nextInvoice(),date,createdAt:new Date().toISOString(),time:new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'}),customer:null,kind:'Gas',channel:'Retail',item:'Cash gas sale',qty:gasQty,rate:gasQty?amount/gasQty:0,amount:roundAmount(amount),paid:roundAmount(amount),directCash:true};
  state.sales.unshift(s);
 }
 function nextInvoice(){return String(Math.max(1048,...state.sales.map(s=>Number(s.id)))+1)}
 function submitTrading(e){
  const before=structuredClone(state),f=Object.fromEntries(new FormData(e.target));
  try{
-  if(action==='cash')recordCash(Number(f.amount),Number(f.gasQty||0));
+  if(action==='cash'){recordCash(Number(f.amount),Number(f.gasQty||0),f.saleDate);cashDate=f.saleDate;}
   else{
+   assertDateOpen(today());
    const qty=Number(f.qty),cost=Number(f.cost),rate=Number(f.rate);
    if(!Number.isInteger(qty)||qty<(action==='part-new'?0:1))throw Error('Quantity poore pieces mein enter karein.');
    if(!Number.isFinite(rate)||rate<=0)throw Error('Selling price 0 se zyada ho.');
@@ -77,5 +80,5 @@ document.addEventListener('submit',e=>{
  try{recordCash(Number(new FormData(e.target).get('amount')));save();render();document.querySelector('#quick-cash-form input').focus();toast('Payment saved')}catch(err){state=before;toast(err.message)}
 });
 document.addEventListener('click',e=>{const b=e.target.closest('[data-parts-view]');if(b){partsView=b.dataset.partsView;render()}});
-document.addEventListener('change',e=>{if(e.target.name==='part'){const p=state.partItems.find(p=>p.id===e.target.value);if(p)document.getElementById('entry-form').elements.rate.value=p.sellingRate}});
+document.addEventListener('change',e=>{if(e.target.id==='cash-date'){try{validateSaleDate(e.target.value);cashDate=e.target.value;render()}catch(err){e.target.value=cashDate;toast(err.message)}}if(e.target.name==='part'){const p=state.partItems.find(p=>p.id===e.target.value);if(p)document.getElementById('entry-form').elements.rate.value=p.sellingRate}});
 render();
