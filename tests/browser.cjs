@@ -372,12 +372,33 @@ const assert = require('node:assert/strict');
  assert.match(await page.locator('#overview-stock-stats').innerText(),/Active customers/);
  assert.equal(await page.locator('.revenue-trend svg').count(),1);
  assert.match(await page.locator('.dashboard-insights').innerText(),/Stock overview/);
+ // Set actual full-cylinder counts, then save cylinder-wise alert levels.
+ await page.locator('[data-action=filled-stock]').first().click();
+ for(const [i,size] of ['11.8','15','45.4'].entries()){
+  if(i)await page.locator('[data-action=filled-stock]').first().click();
+  await page.locator('[name=capacity]').selectOption(size);await page.locator('[name=qty]').fill('10');
+  await page.getByRole('button',{name:'Save entry'}).click();
+ }
+ assert.match(await page.locator('.dashboard-insights table').innerText(),/45.4 kg/);
+ assert.doesNotMatch(await page.locator('.dashboard-insights table').innerText(),/Main godown/);
  await page.locator('.alert-settings summary').click();
- await page.locator('[name=gasKg]').fill('0');await page.locator('[name=partsQty]').fill('20');
+ await page.locator('[name="level-11.8"]').fill('12');await page.locator('[name="level-15"]').fill('0');await page.locator('[name="level-45.4"]').fill('0');
  await page.locator('#stock-alert-settings button').click();
- assert.match(await page.locator('.stock-alert-list').innerText(),/Test regulator/);
+ assert.match(await page.locator('.stock-alert-list').innerText(),/11.8 kg cylinders/);
  await page.reload();
- assert.deepEqual(await page.evaluate(()=>state.stockAlertSettings),{gasKg:0,partsQty:20});
+ assert.deepEqual(await page.evaluate(()=>state.cylinderAlertLevels),{'11.8':12,'15':0,'45.4':0});
+ await navigate('Cylinder tracking');
+ await page.locator('[data-action=cylinder]').click();await page.locator('[name=customer]').selectOption('c5');await page.locator('[name=capacity]').selectOption('15');await page.locator('[name=qty]').fill('999');
+ await page.getByRole('button',{name:'Save entry'}).click();assert.match(await page.locator('#form-error').innerText(),/Not enough full/);
+ assert.equal((await page.evaluate(()=>fullCylinderStock('15'))).qty,10);
+ await page.locator('[name=qty]').fill('2');await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal((await page.evaluate(()=>fullCylinderStock('15'))).qty,8);
+ await navigate('Gas calculator');await page.locator('[data-calculator-tab=purchase]').click();
+ await page.locator('[data-plant-field=quantity]').nth(0).fill('1');await page.locator('[data-plant-field=quantity]').nth(1).fill('1');
+ await page.locator('[name=plantRate]').fill('1180');
+ await page.locator('#save-plant-purchase').click();await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal((await page.evaluate(()=>fullCylinderStock('15'))).qty,9);assert.equal((await page.evaluate(()=>fullCylinderStock('45.4'))).qty,11);
+ await navigate('Overview');
  const formula=await page.evaluate(()=>closingFormulaTotals({customers:[{opening:100,newOpening:50,bills:200,received:80,closing:270,cylOpening:2,out:4,inside:1,cylClosing:5}],gasSales:300,partsSales:100,collections:90,expenses:10}));
  assert.equal(formula.opening+formula.newOpening+formula.bills-formula.received,formula.closing);
  assert.equal(formula.cylOpening+formula.cylOut-formula.cylIn,formula.cylClosing);
@@ -440,6 +461,23 @@ const assert = require('node:assert/strict');
   }finally{state=original}
  });
  assert.equal(values.gasValue,800);assert.equal(values.partsValue,160);assert.equal(values.moneyInMarket,600);assert.equal(values.lastMonthClosing,500);assert.equal(values.cash,150);
+ // Net profit uses gas cost of sales, recorded part cost and expenses, not full stock purchases or debt recovery.
+ const profits=await page.evaluate(()=>{
+  const original=state;
+  try{
+   state={...state,stock:[{date:'2026-01-01',qty:100,purchaseCost:1000},{date:'2026-01-03',qty:100,purchaseCost:2000},{date:'2026-02-01',qty:100,purchaseCost:1}],sales:[{id:'g1',date:'2026-01-02',kind:'Gas',qty:20,amount:400},{id:'p1',date:'2026-01-03',kind:'Parts',qty:2,costPerUnit:50,amount:200},{id:'g2',date:'2026-01-04',kind:'Gas',qty:18,amount:360}],receipts:[{date:'2026-01-10',amount:999}],expenses:[{date:'2026-01-04',amount:30}]};
+   const complete=monthlyNetProfit('2026-01-01','2026-02-01');state.sales.push({id:'missing',kind:'Gas',date:'2026-01-05',qty:0,amount:100});const incomplete=monthlyNetProfit('2026-01-01','2026-02-01');return {complete,incomplete};
+  }finally{state=original}
+ });
+ assert.equal(profits.complete.complete,true);assert.equal(profits.complete.revenue,960);assert.equal(profits.complete.gasCost,480);assert.equal(profits.complete.partsCost,100);assert.equal(profits.complete.netProfit,350);
+ assert.equal(profits.incomplete.netProfit,null);assert.equal(profits.incomplete.missing[0].id,'missing');
+ await navigate('Monthly closing');
+ assert.match(await page.locator('#monthly-values').innerText(),/Net profit/);
+ assert.match(await page.locator('#monthly-values').innerText(),/Incomplete/);
+ await page.locator('[data-profit-month]').click();await page.locator('[name=saleId]').selectOption('1045');await page.locator('[name=unitCost]').fill('500');
+ await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.evaluate(()=>state.sales.find(s=>s.id==='1045').costPerUnit),500);
+ assert.equal(await page.evaluate(()=>balance(customer('c5'))),21700);
  await page.setViewportSize({width:390,height:844});
  await page.locator('#menu').click();
  await navigate('Overview');
@@ -458,6 +496,6 @@ const assert = require('node:assert/strict');
   assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|khata|diye|wapas|hisab|zyada|nahin)\b/i);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: combined ledger, simplified cylinder flow, formula-free reports, month-end gas/parts/market/previous closing/cash values, periods and preserved business workflows.');
+ console.log('PASS: cylinder-wise full stock/alerts, plant and dispatch updates, weighted gas/parts net profit, missing-data handling and cost correction, preserved reports and workflows.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

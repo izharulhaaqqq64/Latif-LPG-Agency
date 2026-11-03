@@ -24,7 +24,7 @@ function ledgerTable(id=''){
   return `<tr><td>${esc(r.date)}</td><td><strong>${esc(customer(r.customer)?.name||'Cash sale')}</strong><small>${esc(r.label)}</small></td><td>Rs. ${money(r.debit)}</td><td>Rs. ${money(r.credit)}</td><td><strong>Rs. ${money(rupees)}</strong></td><td>${r.out}</td><td>${r.inside}</td><td><strong>${cylinderLabel(cylinders)}</strong></td></tr>`;
  }))+ledgerTotalsPanel(id);
 };
-function monthReport(month){const range=closingRange('monthly',month+'-01');const report=periodReport(range.start,range.end,month);return {...report,financialSummary:monthlyFinancialValues(report)}}
+function monthReport(month){const range=closingRange('monthly',month+'-01');const report=periodReport(range.start,range.end,month);return {...report,financialSummary:monthlyFinancialValues(report),profit:monthlyNetProfit(range.start,range.end)}}
 function periodReport(start,end,label){
  const during=x=>x.date>=start&&x.date<end,before=x=>x.date<start;
  const sales=state.sales.filter(during),receipts=state.receipts.filter(during),cylinders=state.cylinders.filter(during);

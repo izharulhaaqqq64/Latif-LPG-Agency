@@ -12,7 +12,7 @@ To update, export a backup, close the server, extract the latest ZIP and start t
 
 ## One workspace per task
 
-- **Overview:** eight cards for sales, monthly revenue, active customers, gas stock, parts stock value, outstanding credit, daily expenses and empty-cylinder count, plus a dated Total daily cash panel, month-by-month revenue trend, current stock by location and low-stock alerts. Inventory and account balances show the current position; sales, cash and expenses use the selected date. Detailed weights and transaction tables remain in their own sections. Initial demo records are retained and included in totals.
+- **Overview:** eight cards for sales, monthly revenue, active customers, gas stock, parts stock value, outstanding credit, daily expenses and empty-cylinder count, plus a dated Total daily cash panel, month-by-month revenue trend, cylinder-wise full stock and low-stock alerts. Inventory and account balances show the current position; sales, cash and expenses use the selected date. Detailed weights and transaction tables remain in their own sections. Initial demo records are retained and included in totals.
 - **Sales:** Daily cash sales and Customer sales & invoices tabs. Anonymous cash entries require only an amount, with separate entries/totals for each selected date. Optional kg reduces Shop stock. Named sales support full/partial payment, credit, retail/wholesale/supply and linked cylinder movements.
 - **Money & cylinder ledger:** one customer-selectable money/cylinder statement, without separate account or payment-history tabs. Customer, credit-entry, collection, due-date, reminder, CSV and print actions remain in the ledger. The selected customer summary shows money owed, cylinder sizes, last purchase date/time and elapsed time since purchase. Record other debts using Credit entry; gas invoices already post automatically and must not be manually reposted. Collections reduce debt. Statements can be printed or downloaded as CSV. Reminder drafts can be reviewed and downloaded locally; the app sends no messages.
 - **Gas & inventory:** gas arrivals, plant purchase costs and all godown/location balances together. Retail draws from Shop, wholesale from Main godown and supply from Supply vehicle.
@@ -34,7 +34,7 @@ Amounts are rounded to two decimals. Gas unit pricing uses full intermediate pre
 
 Data remains in this browser's localStorage under `latif-lpg-v1`. New fields are initialized without resetting sales, customers, receipts, cylinders, parts or closing snapshots. Existing names, notes and saved records are not translated or deleted. JSON export includes the complete saved state; CSV statements contain ledger rows and running money/cylinder balances. Automated JSON restore is not implemented.
 
-There is no authentication, server database, cross-device synchronization or automatic cloud backup. Publication/deployment is separate from running the app locally. The monthly report is a customer receivables/cylinder reconciliation, not statutory accounts or a complete profit-and-loss report.
+There is no authentication, server database, cross-device synchronization or automatic cloud backup. Publication/deployment is separate from running the app locally. The monthly report reconciles customer/inventory records and calculates net profit when recorded costs are complete. It is not statutory accounts; expenses and costs not entered in the app cannot be included.
 
 ## Validation
 
@@ -63,7 +63,7 @@ New customer gas sales have an explicit payment-method selector. Older sales wit
 
 The dashboard date selects the reporting month for monthly revenue, active customers and the month-wise revenue trend. Monthly revenue is gas plus parts invoice amounts, including credit sales and excluding manual debts, stock purchases and recovered debt. Active customers are unique saved customer accounts with at least one purchase in that month; anonymous sales, recoveries alone and opening balances do not count. The revenue trend compares monthly invoice totals for the last 12 months ending in the selected month, with month/year labels. It does not plot individual days.
 
-Stock overview uses current gas quantities by location and tracked parts quantities. Low stock alerts trigger at or below editable thresholds: default 500 kg per gas location and 5 pieces per part. Thresholds persist in browser data and backups. Unmeasured cash gas cannot reduce recorded stock.
+Dashboard Stock overview and Low stock alerts use full-cylinder counts for 11.8, 15 and 45.4 kg. Each size has its own whole-cylinder threshold, default 5. Unknown opening counts show Not set rather than a fabricated zero. Old kg/parts alert settings remain in saved data; location gas kg and part quantities remain available in their respective inventory pages.
 
 The dashboard Monthly closing button opens the selected month's closing under Reports. Reports show calculated results without visible formula blocks.
 
@@ -100,3 +100,12 @@ The monthly report shows **Gas value**, **Parts value**, **Money in market**, **
 - Cash is the month's recorded cash receipts less cash expenses. It excludes opening cash and unrecorded inventory payments, so it is not an actual till balance.
 
 These values are frozen in new monthly closing snapshots. Older snapshots are preserved and show missing stored values as unrecorded; reopen and save to add the new summary. Daily/weekly/monthly balances and closing locks continue to work.
+
+
+## Cylinder-wise full stock and automatic net profit
+
+Use **Overview → Update counts** to enter the current physical full-cylinder count for 11.8, 15 and 45.4 kg. Counts include all earlier receipts/issues. New plant receipt line quantities and customer dispatches marked **full** update subsequent stock automatically. Uncheck the full-dispatch option for empty or other container movements. Manual full-cylinder receipts/issues are available for movements not already recorded. Known stock cannot be over-issued; before a count is set, no exact availability is claimed. Full-cylinder counts are independent of gas kg, empties and client-held balances. Kg-only cash sales cannot identify cylinder size and do not change full-cylinder counts automatically. The retired 45.4 kg client-tracking option stays retired; the dashboard's 45.4 kg full stock remains independently manageable.
+
+Monthly **Net profit** is calculated automatically as invoice revenue minus gas cost of sales, parts cost of sales and recorded operating expenses. Gas cost uses a chronological pooled weighted average of dated receipts, or an explicitly entered actual unit cost for that sale. Parts use their recorded unit cost. Only sold inventory is expensed; unsold purchases remain stock. Credit sales count as revenue; recovered debt does not add revenue again. Purchases after the report period are excluded.
+
+Unpriced gas receipts, missing gas weights, unreconciled gas stock or uncosted parts sales can make profit incomplete. The report then shows Incomplete instead of inventing a figure. **Gas & inventory → Gas purchase costs for profit** records actual receipt costs. **Complete sale costs** records missing gas kg and/or actual unit cost, preserving invoice value, payment and customer balance. Missing kg reduces recorded gas inventory; adding cost alone does not. Corrections are logged and respect all closing locks. Reopen affected closings first. Older saved snapshots keep their values and mark profit as not stored; newly saved monthly closings include the profit calculation and missing-data status.

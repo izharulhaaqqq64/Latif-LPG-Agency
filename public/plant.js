@@ -42,7 +42,7 @@ function submitPlantPurchase(e){
   if(!plantDraft)throw Error('Calculate and review the purchase again.');
   const f=Object.fromEntries(new FormData(e.target));validateSaleDate(f.date);assertDateOpen(f.date);
   if(!['Main godown','Shop','Supply vehicle'].includes(f.warehouse))throw Error('Select a valid storage location.');
-  state.stock.unshift({id:crypto.randomUUID(),date:f.date,createdAt:new Date().toISOString(),warehouse:f.warehouse,qty:plantDraft.kg,note:f.note.trim(),purchaseCost:plantDraft.totalCost,plantPurchase:structuredClone(plantDraft)});
+  const receipt={id:crypto.randomUUID(),date:f.date,createdAt:new Date().toISOString(),warehouse:f.warehouse,qty:plantDraft.kg,note:f.note.trim(),purchaseCost:plantDraft.totalCost,plantPurchase:structuredClone(plantDraft)};state.stock.unshift(receipt);recordPlantCylinderReceipt(receipt);
   save();plantDraft=null;document.getElementById('entry-dialog').close();render();toast('Plant purchase saved. Gas inventory increased.');
  }catch(err){state=before;document.getElementById('form-error').textContent=err.message}
 }
