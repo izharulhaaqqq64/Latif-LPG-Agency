@@ -15,7 +15,7 @@ function cylinderPeriodSizes(rows,start,end){
   return {capacity,opening,out,inside,closing:opening+out-inside};
  }).filter(x=>x.opening||x.out||x.inside);
 }
-cylinderPage=function(){
+function cylinderPage(){
  const matches=c=>c.name.toLowerCase().includes(query.toLowerCase()),rows=state.cylinders.filter(c=>matches(customer(c.customer)));
  return toolbar('cylinder','Cylinder entry')+`<div class="stats">${CYLINDER_SIZES.map(size=>stat(size+' cylinders',state.customers.reduce((a,c)=>a+Math.max(0,cylinderSizeBalance(c.id,size)),0),'♧','Outstanding quantity held by customers','pcs')).join('')}</div><div class="demo-banner">Cylinder size is its capacity, not a measured gas quantity. Cylinder movements do not change gas inventory. Legacy entries retain “Size not recorded” without an assumed capacity.</div><article class="card"><div class="card-heading table-top"><h2>Customer cylinder quantities by size</h2></div>${table(['CUSTOMER','DISPATCHED','RETURNED','TOTAL OUTSTANDING',...CYLINDER_SIZES.map(size=>size+' KG'),'OLD / UNSPECIFIED'],state.customers.filter(matches).map(c=>{const rr=state.cylinders.filter(x=>x.customer===c.id),out=rr.filter(x=>x.direction==='Out').reduce((a,x)=>a+x.qty,0),inside=rr.filter(x=>x.direction==='In').reduce((a,x)=>a+x.qty,0);return `<tr><td>${customerCell(c.id)}</td><td>${out}</td><td>${inside}</td><td><strong>${cylinderLabel(out-inside)}</strong></td>${[...CYLINDER_SIZES,'unknown'].map(s=>`<td>${cylinderLabel(cylinderSizeBalance(c.id,s))}</td>`).join('')}</tr>`}))}</article><article class="card" style="margin-top:20px"><div class="card-heading table-top"><h2>Cylinder movement history by size</h2></div>${table(['DATE','CUSTOMER','SIZE','MOVEMENT','QUANTITY','REFERENCE'],rows.map(c=>`<tr><td>${esc(c.date)}</td><td>${customerCell(c.customer)}</td><td><strong>${capacityLabel(c.capacity)}</strong></td><td>${c.direction==='Out'?'Dispatch':'Return'}</td><td>${c.qty} pcs</td><td>${esc(c.note)}</td></tr>`))}</article>`;
 };
@@ -33,7 +33,6 @@ const gasNumber=n=>new Intl.NumberFormat('en-PK',{maximumFractionDigits:6}).form
 function calculatorResults(){
  try{const result=gasCalculation(gasCalc);return `<div class="stats">${stat('Gas weight',gasNumber(result.kg),'◫','Total gas quantity','kg')}${stat('Gas units',gasNumber(result.units),'▦','1 unit = 11.8 kg','units')}${stat('Total amount',money(result.amount),'↗','Based on the entered rate')}</div><p class="card-subtitle">Rate per kg: Rs. ${gasNumber(result.ratePerKg)} · Full precision is used; the final amount is rounded to two decimals.</p>`}catch(err){return `<div class="demo-banner" role="alert">${esc(err.message)}</div>`}
 }
-function calculatorPage(){return conversionPage()}
 function conversionPage(){
  return `<article class="card cash-entry"><h2>Gas calculator</h2><p><strong>1 unit = 11.8 kg</strong> · 23.6 kg = 2 units. Cylinder size is its nominal gas capacity.</p><div class="calculator-fields">${select('Input type','calcMode',[['kg','Kilograms (kg)'],['units','Units (11.8 kg)'],['cylinders','Full cylinder quantity']])}${field('Quantity','calcQuantity','number',gasCalc.quantity,'min="0" step="any"')}${select('Cylinder size','calcSize',CYLINDER_SIZES.map(s=>[s,s+' kg']))}${field('Gas rate (Rs.)','calcRate','number',gasCalc.rate,'min="0" step="any"')}${select('Price basis','calcBasis',[['unit','Per 11.8 kg unit'],['kg','Per kg']])}</div><div id="calculator-result">${calculatorResults()}</div><button class="button primary" id="calculator-cash">Record calculated cash sale</button><p class="card-subtitle">Calculating does not save an entry. Review and save the cash form to record a sale. Cylinder calculations assume full fills.</p></article>`;
 }
@@ -59,4 +58,3 @@ document.addEventListener('click',e=>{
   openForm('cash');const form=document.getElementById('entry-form');form.elements.amount.value=result.amount;form.elements.gasQty.value=Math.round(result.kg*100)/100;form.querySelector('details').open=true;
  }catch(err){toast(err.message)}
 });
-render();

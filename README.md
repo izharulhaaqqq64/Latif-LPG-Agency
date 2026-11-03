@@ -1,66 +1,41 @@
 # Latif LPG Agency
 
-A responsive LPG business management application. Start with `npm start` (Node.js 20+), or `PORT=3001 npm start` for another port. No runtime packages or database are required.
+A responsive English-language LPG business application for Windows, mobile browsers and desktop browsers.
 
-Includes retail, wholesale and hotel/shop gas sales; separate parts sales accounting; customer ledger and opening balances; credit and recoveries; gas arrivals and stock by location; cylinder arrivals and dispatch; daily reports; printable reports and invoice details; and JSON backup export.
+## Run
 
-Gas sales reduce stock at Shop (Retail), Main godown (Wholesale), or Supply vehicle (Supply). Sales exceeding location stock and payments exceeding outstanding balances are rejected. Collections reduce customer balances. Sample records are included for demonstration, and the weekly chart is explicitly sample data.
+Requires Node.js 20+. Run `npm start` from the project folder; the default port is 3000 (`PORT` can override it). No runtime packages or database installation are needed.
 
-**Current storage:** browser localStorage. Entries persist across refreshes on the same browser only. This is a local prototype, with no authentication or cross-device synchronization. Do not use it as your sole accounting record. Export backups through the application. Multi-user production use requires a backend database, authentication, backups, and audit controls.
+On Windows 11, install Node.js LTS, download the GitHub ZIP, extract it, and double-click **START-APP.bat**. Keep the server window open. Refresh the browser if startup takes more than three seconds.
 
-## Windows 11
+To update, export a backup, close the server, extract the latest ZIP and start the new folder. Use the same browser and `http://localhost:3000` to retain existing data. Do not clear browser storage.
 
-Install Node.js LTS from https://nodejs.org. On GitHub, choose Code > Download ZIP, then extract all files. Open the extracted project folder and double-click START-APP.bat. Keep the Latif LPG Server window open. The app opens in your browser; refresh if startup takes longer than three seconds. No npm install is needed.
+## One workspace per task
 
-## Browser validation
+- **Overview:** current sales, collections, outstanding credit, stock and a real seven-day sales chart derived from saved entries. Initial demo records are retained and included in totals.
+- **Sales:** Daily cash sales and Customer sales & invoices tabs. Anonymous cash entries require only an amount, with separate entries/totals for each selected date. Optional kg reduces Shop stock. Named sales support full/partial payment, credit, retail/wholesale/supply and linked cylinder movements.
+- **Credit book:** Accounts & outstanding, Money & cylinder ledger, and Payments & recoveries tabs. Customers, ledger and collections share one workspace rather than duplicate sidebar pages. Accounts show outstanding money, cylinder sizes, last recorded purchase, due date and overdue status. Record other debts using Credit entry; gas invoices already post automatically and must not be manually reposted. Collections reduce debt. Statements can be printed or downloaded as CSV. Reminder drafts can be reviewed and downloaded locally; the app sends no messages.
+- **Gas & inventory:** gas arrivals, plant purchase costs and all godown/location balances together. Retail draws from Shop, wholesale from Main godown and supply from Supply vehicle.
+- **Cylinder tracking:** customer dispatches, returns and balances for 11.8, 15, 45.4 and 45.5 kg capacities. Returns must match the same customer's outstanding size. Legacy untyped movements remain under Size not recorded. Container movements alone do not change gas kg inventory.
+- **Gas parts:** stock, actual cost/selling price/profit, and movement-history tabs. Purchases increase stock; cash sales decrease it. Actual cost uses a weighted average; each sale preserves its cost for gross profit. Untracked legacy invoices remain intact without invented costs.
+- **Gas calculator:** mixed plant purchases at a price per 11.8 kg unit, plus the KG/unit converter. Add cylinder quantities and actual capacities; `total kg = sum(quantity × capacity)`, `units = kg / 11.8`, and `cost = units × unit price`. For 40 × 15 kg + 10 × 45.4 kg, weight is 1,054 kg and units are 89.3220338983…; at Rs. 1,180/unit, cost is Rs. 105,400. Review and save to add purchased gas and cost to inventory. This is not a customer sale or supplier payment. 45.4 and 45.5 kg remain separate sizes.
+- **Expenses:** dated operating expenses with category, payment method and note. These are separate from inventory purchases. Daily and monthly reports include them; collections after expenses is not a complete cash/bank balance or net profit.
+- **Reports:** Daily report and Monthly closing tabs. Closing snapshots include opening/bills/manual credit/receipts/closing money, capacity-specific cylinder quantities and expenses. Balances carry forward by calculation without duplicate entries. Saved months and earlier dates that affect them are locked; reopen dependent closings newest first to correct a period.
 
-With Playwright installed and Chromium available at `/usr/bin/chromium`, start the server, then run `node tests/browser.cjs`. This checks a credit sale, balance calculation, recovery, persistence, all main pages, mobile overflow, and JavaScript errors. The browser dependency is only needed for testing.
+## Credit and dates
 
-## Daily sale, automatic ledger, and cylinder quantities
+Last purchase is the latest customer-linked gas or parts sale date. Collections and manual debt entries do not change it. Customers with only an opening balance have no recorded purchase date.
 
-Daily sales show quantity, rate, received amount, live bill total and credit balance. Use **Paid in full** or **Full credit**; wholesale, supply, parts, and cylinder counts are in the expandable options. Parts labels change to pieces automatically.
+Due dates apply to the current customer account balance, not invoice-level aging. Updating a due date does not alter the debt or saved financial closing. New credit and expense entries respect date validation and closing locks.
 
-The **Automatic ledger** page derives debits, credits and running balances from opening balances, sales, sale payments, and recoveries; no duplicate manual posting is needed. Select a customer for their own ledger. All-customer mode shows the combined running balance.
+Amounts are rounded to two decimals. Gas unit pricing uses full intermediate precision; display rounding does not change purchase cost. Cash gas weights support 0.01 kg precision. Unmeasured cash entries retain their payments without inventing kg and are flagged in stock/reports.
 
-**Cylinder tracking** shows customer-wise sent, returned, and outstanding quantities plus movement history. Sales can record both dispatches and returns linked to the invoice. Cylinders are whole quantities, separate from gas kg. Returns above the customer's available quantity are rejected; legacy unmatched returns remain visible for reconciliation. This tracks cylinders held by customers, not total agency-owned inventory.
+## Storage and backups
 
-To update an existing Windows installation, export a backup first, close the old server, download and extract the latest GitHub ZIP, and launch START-APP.bat from the new folder. Use the same browser and http://localhost:3000 to retain existing browser data. Do not clear browser storage. Existing data is kept under the same localStorage key. JSON export is a backup file; automated restore is not implemented.
+Data remains in this browser's localStorage under `latif-lpg-v1`. New fields are initialized without resetting sales, customers, receipts, cylinders, parts or closing snapshots. Existing names, notes and saved records are not translated or deleted. JSON export includes the complete saved state; CSV statements contain ledger rows and running money/cylinder balances. Automated JSON restore is not implemented.
 
-## Direct cash entries and tracked gas parts
+There is no authentication, server database, cross-device synchronization or automatic cloud backup. Publication/deployment is separate from running the app locally. The monthly report is a customer receivables/cylinder reconciliation, not statutory accounts or a complete profit-and-loss report.
 
-Use **Daily cash sales** for amount-only, unnamed cash gas payments. Each payment contributes once to sales, collections and the automatic ledger, with today's direct-entry total at the bottom. The header **Cash entry** button also offers optional kg. Entries without kg do not fabricate quantities or reduce gas stock; the inventory and overview display a warning for unmeasured payments. Use Collections for recovering existing customer debt and Sales & invoices for named/credit sales.
+## Validation
 
-The **Gas parts** page has Stock / quantity, Actual price & profit, and movement-history tabs. Add a part with opening quantity, cost per piece and selling price. Purchases increase stock and update the weighted-average cost. Cash part sales decrease stock, post an invoice/payment, and preserve the cost at sale time for realized gross profit. Overselling, negative prices and fractional piece counts are rejected. Gross profit excludes business expenses. Existing untracked parts invoices remain unchanged and are excluded from tracked-stock profit calculations because their purchase cost is unknown. Parts purchases are stock movements, not a supplier/payables ledger.
-
-Existing localStorage data stays in place; new parts arrays are initialized without resetting prior sales, khata, cylinder or receipt entries. Continue using the same browser and localhost:3000 after updating.
-
-## Money and cylinders together, date-wise cash, monthly closing
-
-The Automatic ledger and customer ledger show outstanding rupees and cylinders together. Cylinder movements appear as their own ledger rows with running quantity; linked sales are not counted twice. Negative legacy cylinder balances are labeled unmatched returns.
-
-Daily cash sales has a date selector. Entries and the bottom total belong only to that date, and new payments use the selected date. The cash-entry dialog also has an explicit date. Historical dates are allowed, future and invalid dates are rejected. Initial selection is today's date in Asia/Karachi. Existing entries keep their original saved dates.
-
-Monthly closing shows customer opening rupees, new-account opening adjustments, bills, received payments, closing rupees, opening cylinders, dispatched, returned, and closing cylinders. Sales and collections include anonymous cash and parts sales once. Parts gross profit only uses cost-tracked parts. Save monthly closing persists a snapshot in the existing browser data. The next month's opening is derived from all preceding activity; balances are never duplicated or reset.
-
-Saving a closing locks new entries for that month and earlier dates that could alter the closing. To correct an entry period, reopen dependent closings in newest-to-oldest order. Current-month named sales, receipts, customers, gas stock, cylinder and parts entries also respect the lock. Reopening removes only the saved closing, not business entries. The report includes unmatched historical cylinder returns and unmeasured cash gas entries rather than assuming missing quantities.
-
-Monthly closing is a customer receivables/cylinder reconciliation, not statutory accounts or a complete profit-and-loss report. Like other records, closing snapshots remain browser-local and are included in Export backup.
-
-## Cylinder capacities and 11.8 kg gas units
-
-New cylinder entries select **11.8 kg**, **15 kg**, or **45.5 kg** capacity. Named sales with cylinder quantities also record a size. Returns must match the outstanding quantity for that same customer and size. Tracking, customer ledger, automatic ledger and newly saved monthly closings show capacity details. Monthly snapshots retain the capacity-specific opening, sent, returned and closing quantities. Existing saved closings remain intact; older snapshots without capacity data are labeled accordingly.
-
-Legacy movements with no capacity are kept under **Size not recorded**; they are never silently assigned 11.8 kg. To return an old unspecified cylinder, choose the old-returns option. New dispatches require an actual supported capacity. Cylinder movement tracks containers, not measured gas stock; recording a cylinder movement alone does not deduct gas kilograms.
-
-The **Gas calculator** uses a fixed **1 unit = 11.8 kg**. Convert kg, units or full-cylinder counts of the chosen capacity; enter a gas price per unit or per kg to compute the amount. Cylinder-count mode assumes full cylinders. Calculations keep full intermediate precision and round the final amount to two decimals. The calculator can prefill a direct cash entry with calculated payment and kg; no record is saved until the user saves that form. Cash gas quantities support 0.01 kg precision and the prefill refuses to silently round finer weights.
-
-
-## English interface and mixed plant purchases
-
-All application labels, descriptions, forms and validation messages are in English. Existing customer names, user-entered notes and saved records are preserved without translation.
-
-Gas calculator opens on **Plant purchase**. Add multiple cylinder rows, each with its actual capacity in kg and a whole-number quantity, then enter the plant price **per 11.8 kg unit**. Standard capacity suggestions include 11.8, 15, 45.4 and 45.5 kg; custom positive capacities to 0.01 kg are supported in purchase calculations. 45.4 and 45.5 remain distinct in customer cylinder tracking; no old sizes are renamed.
-
-The calculation is `total kg = sum(quantity × capacity)`, `units = total kg / 11.8`, and `purchase cost = units × unit price`. Units retain full precision for pricing; displayed units have up to six decimals and final money has two. For 40 × 15 kg + 10 × 45.4 kg: total weight is 1,054 kg and units are 89.3220338983…; at Rs. 1,180 per unit the purchase cost is Rs. 105,400. Line costs are individually displayed to two decimals; the final total is calculated from the unrounded overall units.
-
-**Review & add purchased gas to stock** opens a date/location confirmation. Saving records a gas arrival with the purchase cost, unit rate and cylinder breakdown, and increases the selected location's gas inventory. It does not record a retail sale, collection, customer cylinder movement or supplier payment. Monthly closing locks apply. Purchase cost and units are visible on Gas & inventory. Calculation alone does not save anything. The separate **KG / unit converter** retains single-weight, unit and full-cylinder conversions and cash-sale prefill.
+With the app running, Playwright installed and Chromium available at `/usr/bin/chromium`, run `npm test`. Browser tests cover the consolidated navigation, credit and recoveries, overdue accounts, reminder drafts, CSV statements, last purchase, expenses/reports, persistence, monthly lock/carry-forward, mixed plant purchases, gas calculations, parts costing, size-matched cylinder returns and mobile layouts. The browser dependency is only needed for tests.
