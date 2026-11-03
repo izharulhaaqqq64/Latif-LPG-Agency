@@ -30,7 +30,7 @@ function ledgerValueTotals(id=''){
 }
 function ledgerTotalsPanel(id=''){
  const totals=ledgerValueTotals(id);
- return `<div class="ledger-value-totals" id="ledger-totals"><div><span>Total ledger value</span><strong id="ledger-total-value">Rs. ${money(totals.debits)}</strong><small>Opening balances + invoices + other credit</small></div><div><span>Total received</span><strong>Rs. ${money(totals.received)}</strong></div><div><span>Net outstanding balance</span><strong id="ledger-total-balance">Rs. ${money(totals.balance)}</strong><small>Customer credit offsets debt in the combined net balance.</small></div></div>`;
+ return `<div class="ledger-value-totals debit-credit-only" id="ledger-totals"><div><span>Total debit</span><strong id="ledger-total-value">Rs. ${money(totals.debits)}</strong></div><div><span>Total credit</span><strong id="ledger-total-credit">Rs. ${money(totals.received)}</strong></div></div>`;
 }
 function clientCylinderTotals(){
  const bySize=Object.fromEntries([...CYLINDER_SIZES,'unknown'].map(size=>[size,0]));let unmatched=0;

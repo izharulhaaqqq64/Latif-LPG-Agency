@@ -14,8 +14,9 @@ To update, export a backup, close the server, extract the latest ZIP and start t
 
 - **Overview:** eight cards for sales, monthly revenue, active customers, gas stock, parts stock value, outstanding credit, daily expenses and empty-cylinder count, plus a dated Total daily cash panel, month-by-month revenue trend, cylinder-wise full stock and low-stock alerts. Inventory and account balances show the current position; sales, cash and expenses use the selected date. Detailed weights and transaction tables remain in their own sections. Initial demo records are retained and included in totals.
 - **Sales:** Daily cash sales and Customer sales & invoices tabs. Anonymous cash entries require only an amount, with separate entries/totals for each selected date. Optional kg reduces Shop stock. Named sales support full/partial payment, credit, retail/wholesale/supply and linked cylinder movements.
-- **Money & cylinder ledger:** one customer-selectable money/cylinder statement, without separate account or payment-history tabs. Customer, credit-entry, collection, due-date, reminder, CSV and print actions remain in the ledger. The selected customer summary shows money owed, cylinder sizes, last purchase date/time and elapsed time since purchase. Record other debts using Credit entry; gas invoices already post automatically and must not be manually reposted. Collections reduce debt. Statements can be printed or downloaded as CSV. Reminder drafts can be reviewed and downloaded locally; the app sends no messages.
-- **Gas & inventory:** gas arrivals, plant purchase costs and all godown/location balances together. Retail draws from Shop, wholesale from Main godown and supply from Supply vehicle.
+- **Money & cylinder ledger:** one customer-selectable money/cylinder statement, without separate account or payment-history tabs. Customer, credit-entry, collection, due-date, reminder, CSV and print actions remain in the ledger. The selected customer statement retains cylinder sizes, last purchase date/time and elapsed purchase time. Monetary summaries show total debit and total credit only. Record other debts using Credit entry; gas invoices already post automatically and must not be manually reposted. Collections reduce debt. Statements can be printed or downloaded as CSV. Reminder drafts can be reviewed and downloaded locally; the app sends no messages.
+- **Gas & inventory:** full-cylinder counts for 11.8, 15 and 45.4 kg, measured gas kg, receipt breakdowns and purchase costs. Retail draws from Shop, wholesale from Main godown and supply from Supply vehicle.
+- **Supplier credit:** a separate supplier purchase/payment ledger for gas and parts bought on debt.
 - **Cylinder tracking:** new customer dispatches and returns for 11.8, 15 and 45.5 kg capacities. The 45.4 kg option is retired from tracking; historical movements and balances remain readable, and plant calculations still accept 45.4 kg. Returns must match the same customer's outstanding size. Legacy untyped movements remain under Size not recorded. Container movements alone do not change gas kg inventory.
 - **Gas parts:** stock, actual cost/selling price/profit, and movement-history tabs. Purchases increase stock; cash sales decrease it. Actual cost uses a weighted average; each sale preserves its cost for gross profit. Untracked legacy invoices remain intact without invented costs.
 - **Gas calculator:** mixed plant purchases at a price per 11.8 kg unit, plus the KG/unit converter. Add cylinder quantities and actual capacities; `total kg = sum(quantity × capacity)`, `units = kg / 11.8`, and `cost = units × unit price`. For 40 × 15 kg + 10 × 45.4 kg, weight is 1,054 kg and units are 89.3220338983…; at Rs. 1,180/unit, cost is Rs. 105,400. Review and save to add purchased gas and cost to inventory. This is not a customer sale or supplier payment. 45.4 and 45.5 kg remain separate sizes.
@@ -54,7 +55,7 @@ The ledger shows **Time since last purchase**, refreshing every minute. Recorded
 
 ## Total daily cash
 
-Overview and Daily cash sales use the same dated cash calculation: received cash on gas/parts/customer sales plus cash debt recoveries. Credit bill amounts, bank transfers and wallet payments are excluded. Cash expenses are shown separately; net daily cash flow equals cash receipts minus cash expenses and is not an opening-to-closing cash balance. Inventory purchase records are not assumed to be paid in cash.
+Overview and Daily cash sales use the same dated cash calculation: received cash on gas/parts/customer sales plus cash debt recoveries. Credit bill amounts, bank transfers and wallet payments are excluded. Cash expenses are shown separately; net daily cash flow deducts cash operating expenses and explicitly recorded supplier cash payments. It is not an opening-to-closing cash balance. Inventory purchases without a recorded payment are not assumed paid.
 
 New customer gas sales have an explicit payment-method selector. Older sales with no recorded payment method are counted as cash, matching the original cash-entry workflow; this assumption is shown beside the total. Existing records are not rewritten. The anonymous-entry subtotal remains separate from the total that includes all cash sales and recoveries.
 
@@ -78,14 +79,14 @@ Reports include invoice revenue, collections, operating expenses, customer recei
 
 Saving a period persists its snapshot in the existing browser data and locks entries through its end, including earlier dates that could change its opening. A period in progress may be incomplete; saving it freezes further entry until reopened. Reopen later dependent daily/weekly/monthly closings before earlier ones. Existing monthly snapshots are preserved; new financial summary values absent from older snapshots are marked unrecorded instead of invented.
 
-The ledger includes total ledger value (opening balances + invoice/other-credit debits), total received and net outstanding balance. Combined net balance offsets customer credits against customer debt. CSV export includes a totals row. Cylinder values are quantities, not monetary asset valuations.
+The ledger totals show debit (opening balances + invoices/other credit) and credit (payments received). Running balances remain in the rows. CSV export includes a totals row. Cylinder values are quantities, not monetary asset valuations.
 
 Cylinder tracking starts with total cylinders held by clients, summing positive balances for each customer and size. Unmatched negative legacy returns are shown separately and do not reduce another customer's physical count. Empty cylinders held at the agency remain a separate inventory.
 
 
 ## Combined ledger and simplified tracking
 
-The ledger has a prominent **Combined total · all customers** showing the net money outstanding across all customer accounts, including when a single customer is selected. Receivables and customer credits are shown separately beside it. The selected customer's statement and totals remain below. Cylinder quantities are not converted into money without asset prices.
+The customer ledger summary shows only **Total debit** and **Total credit** for all customers. Selected-customer totals also show only debit and credit; individual running balances, last purchase and cylinder history remain in the statement. No separate money-owed or combined-net summary card is displayed. Cylinder quantities are not converted into money without asset prices.
 
 Cylinder tracking focuses on cylinders with clients, empties available, a customer-by-size table, and Give / Receive actions. Empty-stock setup, tare weights and movements are under **Empty stock & setup**. Movement history is collapsed but retained. No transaction is deleted by simplifying the screen.
 
@@ -97,7 +98,7 @@ The monthly report shows **Gas value**, **Parts value**, **Money in market**, **
 - Parts value is historical tracked stock at its recorded costs, excluding later-month movements and untracked legacy parts.
 - Money in market is positive customer receivables at month end; customer credits do not reduce this figure.
 - Last month closing is the previous saved net customer balance, or the equivalent opening balance derived from records if no prior snapshot exists.
-- Cash is the month's recorded cash receipts less cash expenses. It excludes opening cash and unrecorded inventory payments, so it is not an actual till balance.
+- Cash is the month's recorded cash receipts less cash expenses. It also deducts explicitly recorded supplier cash payments. Opening cash and unrecorded payments are excluded, so this is not an actual till balance.
 
 These values are frozen in new monthly closing snapshots. Older snapshots are preserved and show missing stored values as unrecorded; reopen and save to add the new summary. Daily/weekly/monthly balances and closing locks continue to work.
 
@@ -109,3 +110,14 @@ Use **Overview → Update counts** to enter the current physical full-cylinder c
 Monthly **Net profit** is calculated automatically as invoice revenue minus gas cost of sales, parts cost of sales and recorded operating expenses. Gas cost uses a chronological pooled weighted average of dated receipts, or an explicitly entered actual unit cost for that sale. Parts use their recorded unit cost. Only sold inventory is expensed; unsold purchases remain stock. Credit sales count as revenue; recovered debt does not add revenue again. Purchases after the report period are excluded.
 
 Unpriced gas receipts, missing gas weights, unreconciled gas stock or uncosted parts sales can make profit incomplete. The report then shows Incomplete instead of inventing a figure. **Gas & inventory → Gas purchase costs for profit** records actual receipt costs. **Complete sale costs** records missing gas kg and/or actual unit cost, preserving invoice value, payment and customer balance. Missing kg reduces recorded gas inventory; adding cost alone does not. Corrections are logged and respect all closing locks. Reopen affected closings first. Older saved snapshots keep their values and mark profit as not stored; newly saved monthly closings include the profit calculation and missing-data status.
+
+
+## Supplier credit purchases
+
+**Supplier credit** is separate from the customer ledger. Add a supplier with an optional opening amount owed and its date. If stock was already recorded elsewhere, use the opening debt instead of re-entering its inventory purchase.
+
+**Buy on credit** records either a gas cylinder-size/quantity purchase at the price per 11.8 kg unit, or a part-item purchase at cost per piece. The paid-now amount defaults to zero and may be partial or full. Saving creates one supplier invoice and one linked inventory receipt. Gas adds measured kg, cost and full-cylinder movements; parts add stock and recorded cost. Create a part with zero opening stock before buying it here. Do not duplicate the same purchase in the gas calculator or parts purchase form.
+
+**Pay supplier** records later payments. Supplier balances include opening debt, purchases, initial payments and later payments; overpayments and payments before the supplier opening date are rejected. Supplier account credit is purchases/debt; debit is payments. Dates and costs respect closing locks. Historical receipts before a physical cylinder count do not add that count again.
+
+Supplier cash payments, including paid-now amounts, reduce daily and period cash movement once. Bank/wallet payments do not reduce the cash total. These payments are not operating expenses and do not reduce net profit again: profit expenses inventory only through gas/parts cost of sales. Customer debt and revenue remain unchanged by supplier purchases/payments. Supplier data and links persist in the existing browser storage and JSON backup.

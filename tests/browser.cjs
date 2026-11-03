@@ -9,6 +9,7 @@ const assert = require('node:assert/strict');
   await page.locator(`nav [data-page="${root}"]`).click();
   if(tab)await page.locator(`[data-workspace-tab="${tab}"]`).click();
  };
+ const assertLedgerBalance=async(expected)=>{const debit=Number((await page.locator('#ledger-total-value').innerText()).replace('Rs.','').replace(/,/g,'').trim()),credit=Number((await page.locator('#ledger-total-credit').innerText()).replace('Rs.','').replace(/,/g,'').trim());assert.equal(debit-credit,expected)};
  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:3000');
  await page.screenshot({path:'/tmp/latif-desktop.png',fullPage:true});
@@ -116,7 +117,7 @@ const assert = require('node:assert/strict');
  assert.match(await page.locator('#ledger-table').innerText(),/Cash sale/);
  // A customer's money and cylinder balance are visible together.
  await page.locator('#ledger-customer').selectOption('c1');
- assert.equal(await page.locator('#account-money').innerText(),'Rs. 12,800');
+ await assertLedgerBalance(12800);
  assert.equal(await page.locator('#account-cylinders').innerText(),'4 pcs');
  assert.match(await page.locator('#account-cylinder-sizes').innerText(),/Size not recorded: 4 pcs/);
  // Capacity-specific dispatches and returns cannot cancel another cylinder size.
@@ -236,7 +237,7 @@ const assert = require('node:assert/strict');
  await page.locator('#quick-cash-form button').click();
  assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 760');
  // One credit workspace replaces three sidebar pages without losing balances.
- assert.equal(await page.locator('nav button').count(),9);
+ assert.equal(await page.locator('nav button').count(),10);
  assert.equal(await page.locator('nav [data-page="Automatic ledger"]').count(),0);
  await navigate('Customers & ledger');
  await page.locator('[data-action=credit-entry]').click();
@@ -257,7 +258,7 @@ const assert = require('node:assert/strict');
  assert.match(await page.locator('#reminder-draft').inputValue(),/21,700/);
  await page.locator('#close-dialog').click();
 
- assert.equal(await page.locator('#account-money').innerText(),'Rs. 21,700');
+ await assertLedgerBalance(21700);
  assert.match(await page.locator('#account-last-purchase').innerText(),new RegExp(dates.now));
  assert.match(await page.locator('#ledger-table').innerText(),/Additional delivery credit/);
  const statementDownload=page.waitForEvent('download');
@@ -347,7 +348,7 @@ const assert = require('node:assert/strict');
    return {current:dailyCash('2026-01-02'),previous:dailyCash('2026-01-01')};
   }finally{state=original}
  });
- assert.deepEqual(cashTotals.current,{cashSales:150,recoveries:25,expenses:10,total:175,net:165});
+ assert.deepEqual(cashTotals.current,{cashSales:150,recoveries:25,expenses:10,supplierPayments:0,total:175,net:165});
  assert.equal(cashTotals.previous.total,999);
  await navigate('Overview');
  await page.locator('#dashboard-date').fill(dates.previous);
@@ -410,10 +411,12 @@ const assert = require('node:assert/strict');
  // Ledger totals, physical client count, and period boundary/carry-forward checks.
  await navigate('Automatic ledger');
  await page.locator('#ledger-customer').selectOption('c5');
- assert.equal(await page.locator('#ledger-total-balance').innerText(),'Rs. 21,700');
+ await assertLedgerBalance(21700);
  const ledgerTotals=await page.evaluate(()=>ledgerValueTotals('c5'));
- const combined=await page.evaluate(()=>money(ledgerValueTotals('').balance));
- assert.equal(await page.locator('#combined-ledger-total').innerText(),'Rs. '+combined);
+ const combined=await page.evaluate(()=>ledgerValueTotals(''));
+ assert.equal(await page.locator('#combined-ledger-debit').innerText(),'Rs. '+await page.evaluate(n=>money(n),combined.debits));
+ assert.equal(await page.locator('#combined-ledger-credit').innerText(),'Rs. '+await page.evaluate(n=>money(n),combined.received));
+ assert.doesNotMatch(await page.locator('.combined-ledger').innerText(),/Money owed|Combined total|Net outstanding/);
  assert.equal(ledgerTotals.debits-ledgerTotals.received,ledgerTotals.balance);
  assert.equal(await page.locator('#ledger-total-value').innerText(),'Rs. '+await page.evaluate(value=>money(value),ledgerTotals.debits));
  await navigate('Cylinder tracking');
@@ -478,24 +481,53 @@ const assert = require('node:assert/strict');
  await page.getByRole('button',{name:'Save entry'}).click();
  assert.equal(await page.evaluate(()=>state.sales.find(s=>s.id==='1045').costPerUnit),500);
  assert.equal(await page.evaluate(()=>balance(customer('c5'))),21700);
+ // Backdated receipts already covered by a physical count do not add full cylinders twice.
+ const datedFullStock=await page.evaluate(()=>{const old=state;try{state={...state,fullCylinderCounts:[{capacity:'15',qty:10,date:'2026-01-05',createdAt:'2026-01-05T05:00:00Z'}],fullCylinderMovements:[{capacity:'15',qty:5,direction:'In',date:'2026-01-04',createdAt:'2026-01-06T05:00:00Z'},{capacity:'15',qty:2,direction:'In',date:'2026-01-06',createdAt:'2026-01-06T05:01:00Z'}]};return fullCylinderStock('15').qty}finally{state=old}});
+ assert.equal(datedFullStock,12);
+ // Supplier credit adds stock once and records partial/full payments separately from customer debt and profit expenses.
+ const supplierBefore=await page.evaluate(()=>({gas:gasStock(),parts:partInventory(state.partItems[0].id).qty,full:fullCylinderStock('15').qty,cash:dailyCash(today()).net,expenses:state.expenses.length,revenue:monthlyDashboardData(today().slice(0,7)).revenue}));
+ await navigate('Supplier credit');await page.locator('[data-action=supplier-new]').click();
+ await page.locator('[name=name]').fill('Test LPG Plant');await page.locator('[name=opening]').fill('100');
+ await page.getByRole('button',{name:'Save entry'}).click();
+ await page.locator('[data-action=supplier-purchase]').click();
+ await page.locator('[name=capacity]').selectOption('15');await page.locator('[name=qty]').fill('2');await page.locator('[name=rate]').fill('1180');await page.locator('[name=reference]').fill('GAS-001');
+ await page.getByRole('button',{name:'Save entry'}).click();
+ const supplierId=await page.evaluate(()=>state.suppliers[0].id);
+ assert.equal(await page.evaluate(id=>supplierBalance(id),supplierId),3100);
+ assert.equal(await page.evaluate(()=>gasStock()),supplierBefore.gas+30);
+ assert.equal((await page.evaluate(()=>fullCylinderStock('15'))).qty,supplierBefore.full+2);
+ await page.locator('[data-action=supplier-purchase]').click();await page.locator('[name=kind]').selectOption('Parts');await page.locator('[name=qty]').fill('3');await page.locator('[name=rate]').fill('100');await page.locator('[name=paid]').fill('50');await page.locator('[name=reference]').fill('PART-001');
+ await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.evaluate(id=>supplierBalance(id),supplierId),3350);
+ assert.equal(await page.evaluate(()=>partInventory(state.partItems[0].id).qty),supplierBefore.parts+3);
+ await page.locator('[data-action=supplier-payment]').click();await page.locator('[name=amount]').fill('99999');await page.getByRole('button',{name:'Save entry'}).click();assert.match(await page.locator('#form-error').innerText(),/cannot exceed/);
+ await page.locator('[name=amount]').fill('100');await page.getByRole('button',{name:'Save entry'}).click();
+ await page.locator('[data-action=supplier-payment]').click();await page.locator('[name=amount]').fill('200');await page.locator('[name=method]').selectOption('Bank transfer');await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.evaluate(id=>supplierBalance(id),supplierId),3050);
+ assert.equal(await page.evaluate(()=>dailyCash(today()).net),supplierBefore.cash-150);
+ assert.equal(await page.evaluate(()=>state.expenses.length),supplierBefore.expenses);
+ assert.equal(await page.evaluate(()=>monthlyDashboardData(today().slice(0,7)).revenue),supplierBefore.revenue);
+ assert.equal(await page.evaluate(()=>balance(customer('c5'))),21700);
+ await page.reload();await navigate('Supplier credit');assert.match(await page.locator('#content').innerText(),/3,050/);
+ await navigate('Gas & inventory');const gasText=await page.locator('#content').innerText();for(const size of ['11.8 kg cylinders','15 kg cylinders','45.4 kg cylinders'])assert.ok(gasText.includes(size));
  await page.setViewportSize({width:390,height:844});
  await page.locator('#menu').click();
  await navigate('Overview');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
  await page.screenshot({path:'/tmp/latif-mobile.png',fullPage:true});
- for(const screen of ['Daily cash sales','Gas parts','Monthly closing','Automatic ledger','Gas calculator','Cylinder tracking','Expenses']){
+ for(const screen of ['Daily cash sales','Gas parts','Monthly closing','Automatic ledger','Gas calculator','Cylinder tracking','Expenses','Supplier credit']){
   await page.locator('#menu').click();
   await navigate(screen);
   if(screen==='Gas calculator')await page.locator('[data-calculator-tab=purchase]').click();
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
  }
- for(const screen of ['Daily cash sales','Gas parts','Monthly closing','Automatic ledger','Cylinder tracking','Sales & invoices','Customers & ledger','Collections','Gas & inventory','Godowns','Reports','Expenses']){
+ for(const screen of ['Daily cash sales','Gas parts','Monthly closing','Automatic ledger','Cylinder tracking','Sales & invoices','Customers & ledger','Collections','Gas & inventory','Godowns','Reports','Expenses','Supplier credit']){
   await page.locator('#menu').click();
   await navigate(screen);
   const text=await page.locator('#content').innerText();
   assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|khata|diye|wapas|hisab|zyada|nahin)\b/i);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: cylinder-wise full stock/alerts, plant and dispatch updates, weighted gas/parts net profit, missing-data handling and cost correction, preserved reports and workflows.');
+ console.log('PASS: supplier credit gas/parts stock integration, partial payments, overpayment protection, cash/noncash treatment, debit/credit-only ledger, monthly profit and preserved workflows.');
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

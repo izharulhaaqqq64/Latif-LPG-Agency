@@ -5,7 +5,7 @@ state.cylinderAlertLevels ??= {'11.8':5,'15':5,'45.4':5};
 state.costCorrections ??= [];
 let costTarget='',profitMonth='';
 function fullCylinderStock(size){
- const count=state.fullCylinderCounts.filter(row=>row.capacity===size).at(-1),movements=state.fullCylinderMovements.filter(row=>row.capacity===size&&(!count||row.createdAt>count.createdAt));
+ const count=state.fullCylinderCounts.filter(row=>row.capacity===size).at(-1),movements=state.fullCylinderMovements.filter(row=>row.capacity===size&&(!count||row.createdAt>count.createdAt&&(!count.date||row.date>=count.date)));
  return {known:Boolean(count),qty:(count?.qty||0)+movements.reduce((a,row)=>a+(row.direction==='In'?row.qty:-row.qty),0)};
 }
 function recordFullCylinderDispatch(row){
@@ -91,4 +91,3 @@ document.addEventListener('click',e=>{
  const cost=e.target.closest('[data-gas-cost]');if(cost){costTarget=cost.dataset.gasCost;openForm('gas-cost')}
  const profit=e.target.closest('[data-profit-month]');if(profit){profitMonth=profit.dataset.profitMonth;openForm('sale-cost')}
 });
-render();
