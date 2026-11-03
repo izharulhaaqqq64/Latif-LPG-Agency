@@ -1,6 +1,6 @@
 state.creditEntries ??= [];
 state.expenses ??= [];
-let salesView='cash',bookView='accounts',bookCustomer='',reportsView='daily',reportDate=today(),expenseDate=today(),creditFilter='all',termsCustomer='';
+let salesView='cash',bookCustomer='',reportsView='daily',reportDate=today(),expenseDate=today(),termsCustomer='';
 function workspaceTabs(group,items,current){return `<div class="parts-tabs workspace-tabs">${items.map(([value,label])=>`<button data-workspace-tab="${group}:${value}" class="${value===current?'selected':''}">${label}</button>`).join('')}</div>`}
 function salesPage(){
  const tabs=workspaceTabs('sales',[['cash','Daily cash sales'],['customer','Customer sales & invoices']],salesView);
@@ -13,14 +13,26 @@ function inventoryPage(){
  return cashStockWarning()+toolbar('stock','Gas arrival')+`<div class="stats">${['Main godown','Shop','Supply vehicle'].map(w=>stat(w,money(locationStock(w)),'▥','Available gas','kg')).join('')}${stat('Total gas',money(gasStock()),'◫','Across all locations','kg')}</div><article class="card">${table(['DATE','LOCATION','GAS RECEIVED','PURCHASE UNITS','PURCHASE COST','REFERENCE'],state.stock.filter(match).map(s=>`<tr><td>${esc(s.date)}</td><td><strong>${esc(s.warehouse)}</strong></td><td>${money(s.qty)} kg</td><td>${s.plantPurchase?gasNumber(s.plantPurchase.units):'—'}</td><td>${Number.isFinite(s.purchaseCost)?'Rs. '+money(s.purchaseCost):'—'}</td><td>${esc(s.note)}${s.plantPurchase?'<small>'+s.plantPurchase.lines.filter(l=>l.quantity).map(l=>l.quantity+' × '+l.capacity+' kg').join(' + ')+'</small>':''}</td></tr>`))}</article>`;
 }
 function lastPurchaseDate(id){return state.sales.filter(s=>s.customer===id).reduce((latest,s)=>s.date>latest?s.date:latest,'')}
-function overdue(c){return balance(c)>0&&Boolean(c.paymentDueDate)&&c.paymentDueDate<today()}
-function paymentHistory(){return [...state.receipts.map(r=>({...r,source:'Debt recovery'})),...state.sales.filter(s=>s.paid>0).map(s=>({date:s.date,createdAt:s.createdAt||s.date,customer:s.customer,amount:s.paid,method:'Sale payment',source:'Invoice #'+s.id,note:s.item||'LPG gas'}))].sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||'').localeCompare(a.createdAt||''))}
-function creditBookPage(){
- const tabs=workspaceTabs('book',[['accounts','Accounts & outstanding'],['ledger','Money & cylinder ledger'],['collections','Payments & recoveries']],bookView);
- if(bookView==='ledger')return tabs+`<div class="section-toolbar book-toolbar"><label class="field">Customer statement<select id="ledger-customer"><option value="">All customers — combined ledger</option>${state.customers.map(c=>`<option value="${esc(c.id)}" ${bookCustomer===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label><div><button class="button secondary" id="export-statement">Download CSV</button> <button class="button secondary" data-action="print">Print statement</button></div></div><article class="card" id="ledger-table">${ledgerTable(bookCustomer)}</article>`;
- if(bookView==='collections')return tabs+toolbar('receipt','Collect payment')+`<div class="stats">${stat('Collections today',money(receiptsToday()),'↙','Sale payments and debt recoveries')}${stat('Recovery entries',state.receipts.length,'▤','Customer recovery transactions','')}</div><article class="card">${table(['DATE','CUSTOMER','AMOUNT','METHOD','REFERENCE / NOTE'],paymentHistory().filter(r=>(customer(r.customer)?.name||'Cash sale').toLowerCase().includes(query.toLowerCase())).map(r=>`<tr><td>${esc(r.date)}</td><td>${customerCell(r.customer)}</td><td><strong>Rs. ${money(r.amount)}</strong></td><td>${esc(r.method)}</td><td>${esc(r.source||'')}<small>${esc(r.note||'—')}</small></td></tr>`))}</article>`;
- const customers=state.customers.filter(c=>`${c.name} ${c.phone||''}`.toLowerCase().includes(query.toLowerCase())&&(creditFilter==='all'||creditFilter==='outstanding'&&balance(c)>0||creditFilter==='overdue'&&overdue(c)));
- return tabs+`<div class="section-toolbar book-toolbar"><input class="search" id="search" placeholder="Customer or phone…" value="${esc(query)}"><div><button class="button secondary" data-action="customer">＋ Customer</button> <button class="button primary" data-action="credit-entry">＋ Credit entry</button></div></div><div class="stats">${stat('Total receivables',money(state.customers.reduce((a,c)=>a+Math.max(0,balance(c)),0)),'▤','Current unpaid customer balances')}${stat('Overdue receivables',money(state.customers.filter(overdue).reduce((a,c)=>a+balance(c),0)),'◷','Customers past their account due date')}${stat('Customers with dues',state.customers.filter(c=>balance(c)>0).length,'♙','Money and cylinders tracked together','')}</div><div class="parts-tabs credit-filters">${[['all','All accounts'],['outstanding','Outstanding'],['overdue','Overdue']].map(([v,l])=>`<button data-credit-filter="${v}" class="${v===creditFilter?'selected':''}">${l}</button>`).join('')}</div><article class="card">${table(['CUSTOMER','MONEY OUTSTANDING','CYLINDERS','LAST PURCHASE','DUE DATE','STATUS','ACTIONS'],customers.map(c=>`<tr><td>${customerCell(c.id)}<small>${esc(c.phone||'No phone recorded')}</small></td><td><strong>Rs. ${money(roundAmount(balance(c)))}</strong></td><td>${cylinderLabel(cylinderBalance(c.id))}<small>${cylinderBreakdownText(c.id)}</small></td><td>${esc(lastPurchaseDate(c.id)||'No recorded purchase')}</td><td><button class="card-link" data-customer-terms="${c.id}">${esc(c.paymentDueDate||'Set due date')} ✎</button></td><td><span class="badge ${overdue(c)?'credit':'paid'}">${overdue(c)?'Overdue':balance(c)>0?'Outstanding':balance(c)<0?'Customer credit':'Settled'}</span></td><td class="account-actions"><button class="card-link" data-account="${c.id}">Statement</button>${balance(c)>0?`<button class="card-link" data-collect="${c.id}">Collect</button><button class="card-link" data-reminder="${c.id}">Reminder</button>`:''}</td></tr>`))}</article><p class="card-subtitle">Account due dates flag the current outstanding balance; they are not invoice-level aging. Use customer sales for gas invoices and Credit entry only for other debts, to avoid double-posting.</p>`;
+function purchaseTimestamp(s){
+ if(s.createdAt&&Number.isFinite(Date.parse(s.createdAt))&&new Date(s.createdAt).toLocaleDateString('en-CA',{timeZone:'Asia/Karachi'})===s.date)return Date.parse(s.createdAt);
+ const match=String(s.time||'').trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+ if(!match)return null;
+ let hour=Number(match[1]),minute=Number(match[2]);if(minute>59||hour>(match[3]?12:23)||match[3]&&hour<1)return null;
+ if(match[3])hour=hour%12+(match[3].toUpperCase()==='PM'?12:0);
+ const timestamp=Date.parse(s.date+'T'+String(hour).padStart(2,'0')+':'+String(minute).padStart(2,'0')+':00+05:00');return Number.isFinite(timestamp)?timestamp:null;
+}
+function latestPurchase(id){return state.sales.filter(s=>s.customer===id).slice().sort((a,b)=>b.date.localeCompare(a.date)||((purchaseTimestamp(b)||0)-(purchaseTimestamp(a)||0))||Number(b.id)-Number(a.id))[0]}
+function purchaseAge(id,now=Date.now()){
+ const sale=latestPurchase(id);if(!sale)return 'No recorded purchase';const timestamp=purchaseTimestamp(sale);
+ if(timestamp===null){const date=new Date(now).toLocaleDateString('en-CA',{timeZone:'Asia/Karachi'}),days=Math.round((Date.parse(date)-Date.parse(sale.date))/86400000);return days===0?'Today (time not recorded)':days>0?days+' day'+(days===1?'':'s')+' ago (time not recorded)':'Purchase date is in the future';}
+ const elapsed=now-timestamp;if(elapsed<0)return 'Recorded purchase time is in the future';const minutes=Math.floor(elapsed/60000),hours=Math.floor(minutes/60),days=Math.floor(hours/24);
+ if(!minutes)return 'Just now';if(!hours)return minutes+' min ago';if(!days)return hours+' hr '+minutes%60+' min ago';return days+' day'+(days===1?'':'s')+' '+hours%24+' hr ago';
+}
+function updatePurchaseAge(){const el=document.getElementById('account-purchase-age');if(el&&bookCustomer)el.textContent='Time since last purchase: '+purchaseAge(bookCustomer)}
+setInterval(updatePurchaseAge,60000);
+function ledgerWorkspacePage(){
+ const c=customer(bookCustomer);
+ return `<div class="section-toolbar book-toolbar"><label class="field">Customer statement<select id="ledger-customer"><option value="">All customers — combined ledger</option>${state.customers.map(c=>`<option value="${esc(c.id)}" ${bookCustomer===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label><div class="ledger-actions"><button class="button secondary" data-action="customer">＋ Customer</button><button class="button secondary" data-action="credit-entry">＋ Credit entry</button><button class="button primary" data-action="receipt" id="ledger-collect">Collect payment</button><button class="button secondary" id="export-statement">CSV</button><button class="button secondary" data-action="print">Print</button></div></div>${c?`<div class="ledger-context"><span>Payment due: ${esc(c.paymentDueDate||'Not set')}</span><button class="card-link" data-customer-terms="${c.id}">Edit due date</button>${balance(c)>0?`<button class="card-link" data-reminder="${c.id}">Reminder draft</button>`:''}</div>`:''}<article class="card" id="ledger-table">${ledgerTable(bookCustomer)}</article>`;
 }
 function openManagementForm(kind){
  action=kind;let html='',title='';
@@ -45,7 +57,7 @@ function submitManagementForm(e){
    validateSaleDate(f.date);assertDateOpen(f.date);const amount=roundAmount(Number(f.amount));if(!Number.isFinite(amount)||amount<=0)throw Error('The amount must be greater than zero.');if(!f.note.trim())throw Error('Enter a description.');
    const row={id:crypto.randomUUID(),date:f.date,createdAt:new Date().toISOString(),amount,note:f.note.trim()};
    if(action==='credit-entry'){
-    const c=customer(f.customer);if(!c)throw Error('Select a customer.');if(!validDueDate(f.dueDate)||f.dueDate&&f.dueDate<f.date)throw Error('The due date cannot be earlier than the entry date.');row.customer=c.id;state.creditEntries.push(row);if(f.dueDate)c.paymentDueDate=f.dueDate;
+    const c=customer(f.customer);if(!c)throw Error('Select a customer.');if(!validDueDate(f.dueDate)||f.dueDate&&f.dueDate<f.date)throw Error('The due date cannot be earlier than the entry date.');row.customer=c.id;bookCustomer=c.id;state.creditEntries.push(row);if(f.dueDate)c.paymentDueDate=f.dueDate;
    }else{row.category=f.category;row.method=f.method;state.expenses.unshift(row);expenseDate=f.date;}
   }
   save();document.getElementById('entry-dialog').close();render();toast('Entry saved. Account and reports updated.');
@@ -75,18 +87,15 @@ function exportStatement(){
 }
 let reminderText='';
 document.addEventListener('click',e=>{
- const tab=e.target.closest('[data-workspace-tab]');if(tab){const [group,value]=tab.dataset.workspaceTab.split(':');if(group==='sales')salesView=value;if(group==='book')bookView=value;if(group==='reports')reportsView=value;query='';render();}
- const filter=e.target.closest('[data-credit-filter]');if(filter){creditFilter=filter.dataset.creditFilter;render();}
- const account=e.target.closest('[data-account]');if(account){bookCustomer=account.dataset.account;bookView='ledger';render();}
- const collect=e.target.closest('[data-collect]');if(collect){const c=customer(collect.dataset.collect);openForm('receipt');const f=document.getElementById('entry-form');f.elements.customer.value=c.id;f.elements.amount.max=roundAmount(balance(c));}
+ const tab=e.target.closest('[data-workspace-tab]');if(tab){const [group,value]=tab.dataset.workspaceTab.split(':');if(group==='sales')salesView=value;if(group==='reports')reportsView=value;query='';render();}
+ const collect=e.target.closest('#ledger-collect');if(collect&&bookCustomer){const c=customer(bookCustomer);const f=document.getElementById('entry-form');f.elements.customer.value=c.id;f.elements.amount.max=roundAmount(balance(c));}
  const terms=e.target.closest('[data-customer-terms]');if(terms){termsCustomer=terms.dataset.customerTerms;openForm('customer-terms');}
  const reminder=e.target.closest('[data-reminder]');if(reminder){const c=customer(reminder.dataset.reminder);reminderText=`Hello ${c.name}, your outstanding balance with Latif LPG Agency is Rs. ${money(roundAmount(balance(c)))}.${c.paymentDueDate?' Payment due date: '+c.paymentDueDate+'.':''} Cylinders outstanding: ${cylinderBreakdownText(c.id)}. Please contact us to arrange payment. Thank you.`;showDetail('Payment reminder draft',`<p class="card-subtitle">Review this message and share it yourself. Nothing has been sent.</p><textarea id="reminder-draft" readonly>${esc(reminderText)}</textarea><button type="button" class="button secondary" id="download-reminder">Download reminder</button>`);}
  if(e.target.closest('#download-reminder'))downloadText('payment-reminder.txt',reminderText);
  if(e.target.closest('#export-statement'))exportStatement();
 });
 document.addEventListener('change',e=>{
- if(e.target.id==='ledger-customer')bookCustomer=e.target.value;
+ if(e.target.id==='ledger-customer'){bookCustomer=e.target.value;render();}
  if(e.target.id==='report-date')reportDate=e.target.value;
  if(e.target.id==='expense-date'){try{validateSaleDate(e.target.value);expenseDate=e.target.value;render()}catch(err){e.target.value=expenseDate;toast(err.message)}}
 });
-render();
