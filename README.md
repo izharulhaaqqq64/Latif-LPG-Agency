@@ -25,3 +25,11 @@ The **Automatic ledger** page derives debits, credits and running balances from 
 **Cylinder tracking** shows customer-wise sent, returned, and outstanding quantities plus movement history. Sales can record both dispatches and returns linked to the invoice. Cylinders are whole quantities, separate from gas kg. Returns above the customer's available quantity are rejected; legacy unmatched returns remain visible for reconciliation. This tracks cylinders held by customers, not total agency-owned inventory.
 
 To update an existing Windows installation, export a backup first, close the old server, download and extract the latest GitHub ZIP, and launch START-APP.bat from the new folder. Use the same browser and http://localhost:3000 to retain existing browser data. Do not clear browser storage. Existing data is kept under the same localStorage key. JSON export is a backup file; automated restore is not implemented.
+
+## Direct cash entries and tracked gas parts
+
+Use **Daily cash sales** for amount-only, unnamed cash gas payments. Each payment contributes once to sales, collections and the automatic ledger, with today's direct-entry total at the bottom. The header **Cash entry** button also offers optional kg. Entries without kg do not fabricate quantities or reduce gas stock; the inventory and overview display a warning for unmeasured payments. Use Collections for recovering existing customer debt and Sales & invoices for named/credit sales.
+
+The **Gas parts** page has Stock / quantity, Actual price & profit, and movement-history tabs. Add a part with opening quantity, cost per piece and selling price. Purchases increase stock and update the weighted-average cost. Cash part sales decrease stock, post an invoice/payment, and preserve the cost at sale time for realized gross profit. Overselling, negative prices and fractional piece counts are rejected. Gross profit excludes business expenses. Existing untracked parts invoices remain unchanged and are excluded from tracked-stock profit calculations because their purchase cost is unknown. Parts purchases are stock movements, not a supplier/payables ledger.
+
+Existing localStorage data stays in place; new parts arrays are initialized without resetting prior sales, khata, cylinder or receipt entries. Continue using the same browser and localhost:3000 after updating.

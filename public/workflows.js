@@ -9,7 +9,7 @@ function ledgerEntries(id='') {
  for(const c of state.customers.filter(c=>!id||c.id===id)){
   if(c.opening) entries.push({date:'Opening',sort:'',customer:c.id,label:'Opening balance',debit:c.opening,credit:0});
  }
- for(const s of state.sales.filter(s=>!id||s.customer===id)) entries.push({date:s.date,sort:s.createdAt||s.date+'T'+String(Number(s.id)).padStart(12,'0'),customer:s.customer,label:`Invoice #${s.id} · ${s.kind} · ${s.qty} ${s.kind==='Gas'?'kg':'pcs'}`,debit:roundAmount(total(s)),credit:s.paid});
+ for(const s of state.sales.filter(s=>!id||s.customer===id)) entries.push({date:s.date,sort:s.createdAt||s.date+'T'+String(Number(s.id)).padStart(12,'0'),customer:s.customer,label:`Invoice #${s.id} · ${s.kind} · ${s.directCash&&!s.qty?'Payment only':s.qty+' '+(s.kind==='Gas'?'kg':'pcs')}`,debit:roundAmount(total(s)),credit:s.paid});
  for(const r of state.receipts.filter(r=>!id||r.customer===id)) entries.push({date:r.date,sort:r.createdAt||r.date+'Tzz'+r.id,customer:r.customer,label:'Wasooli · '+r.method,debit:0,credit:r.amount});
  return entries.sort((a,b)=>a.sort.localeCompare(b.sort));
 }
@@ -17,7 +17,7 @@ function ledgerTable(id='') {
  let running=0;
  return table(['DATE','CUSTOMER / ENTRY','BILL / DEBIT','WASOOL / CREDIT','BAQI BALANCE'],ledgerEntries(id).map(r=>{
   running=roundAmount(running+r.debit-r.credit);
-  return `<tr><td>${esc(r.date)}</td><td><strong>${esc(customer(r.customer)?.name||'')}</strong><small>${esc(r.label)}</small></td><td>Rs. ${money(r.debit)}</td><td>Rs. ${money(r.credit)}</td><td><strong>Rs. ${money(running)}</strong></td></tr>`;
+  return `<tr><td>${esc(r.date)}</td><td><strong>${esc(customer(r.customer)?.name||'Cash sale')}</strong><small>${esc(r.label)}</small></td><td>Rs. ${money(r.debit)}</td><td>Rs. ${money(r.credit)}</td><td><strong>Rs. ${money(running)}</strong></td></tr>`;
  }));
 }
 function ledgerPage(){
