@@ -1,0 +1,10 @@
+{
+  "name": "latif-lpg-agency",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "test": "node tests/browser.cjs"
+  }
+}

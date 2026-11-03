@@ -1,0 +1,42 @@
+const { chromium } = require('playwright');
+const assert = require('node:assert/strict');
+(async () => {
+ const browser = await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+ const page = await browser.newPage({viewport:{width:1440,height:1100}});
+ const errors=[]; page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://127.0.0.1:3000');
+ await page.screenshot({path:'/tmp/latif-desktop.png',fullPage:true});
+ await page.locator('#new-sale').click();
+ await page.locator('[name=customer]').selectOption('c2');
+ await page.locator('[name=qty]').fill('2');
+ await page.locator('[name=rate]').fill('290');
+ await page.locator('[name=paid]').fill('0');
+ await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.locator('dialog').evaluate(e=>e.open),false);
+ let data=await page.evaluate(()=>JSON.parse(localStorage.getItem('latif-lpg-v1')));
+ assert.equal(data.sales[0].qty,2);assert.equal(data.sales[0].paid,0);
+ await page.locator('nav [data-page="Customers & khata"]').click();
+ assert.match(await page.locator('#content').innerText(),/580/);
+ await page.locator('nav [data-page="Collections"]').click();
+ await page.locator('[data-action=receipt]').click();
+ await page.locator('[name=customer]').selectOption('c2');
+ await page.locator('[name=amount]').fill('200');
+ await page.getByRole('button',{name:'Save entry'}).click();
+ await page.reload();
+ data=await page.evaluate(()=>JSON.parse(localStorage.getItem('latif-lpg-v1')));
+ assert.equal(data.receipts[0].amount,200);
+ await page.locator('nav [data-page="Customers & khata"]').click();
+ assert.match(await page.locator('#content').innerText(),/380/);
+ for (const name of ['Sales & invoices','Gas & inventory','Cylinder tracking','Godowns','Reports']) {
+  await page.locator(`nav [data-page="${name}"]`).click();
+  assert.ok((await page.locator('#content').innerText()).length>50);
+ }
+ await page.setViewportSize({width:390,height:844});
+ await page.locator('#menu').click();
+ await page.locator('nav [data-page="Overview"]').click();
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+ await page.screenshot({path:'/tmp/latif-mobile.png',fullPage:true});
+ assert.deepEqual(errors,[]);
+ console.log('PASS: sale, credit balance, collection, persistence, navigation, mobile width, no JS errors.');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});
