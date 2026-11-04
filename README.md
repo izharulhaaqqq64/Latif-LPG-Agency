@@ -191,3 +191,16 @@ Use the highlighted green **WhatsApp reminder** button at the top of **Money & c
 **Open WhatsApp** opens the customer's chat with the prepared message. Press Send yourself in WhatsApp, then return and choose **Mark as sent**. Opening a chat alone does not mark it sent. The app cannot verify delivery; the status records your confirmation. Missing/invalid phone numbers disable opening and sent confirmation.
 
 The ledger shows the last marked-sent time and message history. Records persist in browser storage and Save/Open backups. Sending/marking a reminder never changes money, gas, cash or cylinder balances. When payment is received, record it separately using **Credit · payment received**.
+
+
+## Edit and delete records
+
+**Edit / delete records** is available above every workspace. Choose a record type and search by name/date/reference. Record rows also show Edit/Delete buttons in sales, invoices, receipts, customer ledgers, supplier accounts, parts, gas receipts, expenses, cylinder history and reminder history. Counts, physical openings, manual stock movements, daily prices and saved closings are available through the same manager. Overview charts and calculated reports update from their source records.
+
+Edits preserve record IDs. A generated stock line opens its supplier purchase or sale, so related inventory and ledger entries change together. Deleting a sale reverses its linked parts/empty-cylinder movements and invoice cylinder movements. Deleting a supplier purchase removes its linked receipt and full-cylinder/parts movements once. Supplier and customer payments update balances and cash automatically. Invoice numbers continue forward after deletion.
+
+Changes are checked for newly negative gas/parts/empty/full stock, overpaid customer/supplier accounts and unmatched cylinder returns. Existing legacy mismatches are preserved but cannot be worsened. Part purchase cost edits recalculate later tracked sale costs. Closed dates block financial changes; reopen affected daily/weekly/monthly closings first. Contact-only corrections remain available. Customers, suppliers and parts with dependent history cannot be deleted until those dependencies are removed.
+
+Delete always opens a review dialog. **Save backup first** downloads the current records. A successful change also retains the previous full state locally; open the manager and choose **Download state before last change** to recover that JSON through Open backup. This keeps only the latest pre-change state; download regular backups for longer history. Storage failures or validation errors roll back the proposed change.
+
+To revise a saved closing, choose Edit in the manager and confirm **Reopen for editing**; correct its source entries and save it again. Delete removes the saved snapshot only. Both actions respect later dependent closings. Never edit a calculated report total separately from its transactions.

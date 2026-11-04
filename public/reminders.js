@@ -10,7 +10,7 @@ function whatsappPhone(value){
 function reminderTimestamp(value){return new Date(value).toLocaleString('en-PK',{timeZone:'Asia/Karachi'})}
 function paymentReminderHistory(id){
  const rows=state.paymentReminders.filter(r=>r.customer===id).slice().sort((a,b)=>b.createdAt.localeCompare(a.createdAt));
- return `<div class="reminder-status" id="ledger-reminder-status">${rows.length?'Last WhatsApp reminder marked sent: '+esc(reminderTimestamp(rows[0].createdAt)):'No WhatsApp reminder marked sent yet.'}</div>${rows.length?`<details class="simple-details"><summary>WhatsApp reminder history (${rows.length})</summary>${table(['MARKED SENT','PHONE','AMOUNT REQUESTED',''],rows.map(r=>`<tr><td>${esc(reminderTimestamp(r.createdAt))}</td><td>+${esc(r.phone)}</td><td>Rs. ${money(r.amount)}</td><td><button class="card-link" type="button" data-reminder-history="${esc(r.id)}">View message</button></td></tr>`))}</details>`:''}`;
+ return `<div class="reminder-status" id="ledger-reminder-status">${rows.length?'Last WhatsApp reminder marked sent: '+esc(reminderTimestamp(rows[0].createdAt)):'No WhatsApp reminder marked sent yet.'}</div>${rows.length?`<details class="simple-details"><summary>WhatsApp reminder history (${rows.length})</summary>${table(['MARKED SENT','PHONE','AMOUNT REQUESTED',''],rows.map(r=>`<tr data-record-kind="WhatsApp reminder" data-record-key="${esc(r.id)}"><td>${esc(reminderTimestamp(r.createdAt))}</td><td>+${esc(r.phone)}</td><td>Rs. ${money(r.amount)}</td><td><button class="card-link" type="button" data-reminder-history="${esc(r.id)}">View message</button></td></tr>`))}</details>`:''}`;
 }
 function openWhatsAppReminder(id){
  const c=customer(id);if(!c||balance(c)<=0){toast('This customer has no outstanding payment.');return}
