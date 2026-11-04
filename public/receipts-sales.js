@@ -46,4 +46,3 @@ function showSupplierReceipt(type,id){
  const row=(type==='purchase'?state.supplierPurchases:state.supplierPayments).find(r=>r.id===id);if(!row)return;const name=state.suppliers.find(s=>s.id===row.supplier)?.name||'';
  receiptPreview(type==='purchase'?'Supplier purchase receipt':'Supplier payment receipt',`<p>Date: ${esc(row.date)}<br>Supplier: ${esc(name)}<br>Reference: ${esc(type==='purchase'?row.reference:row.note)}</p><hr>${type==='purchase'?`<p>${row.kind==='Gas'?row.qty+' × '+esc(row.capacity)+' kg cylinders':row.qty+' parts'}<br>Purchase total: Rs. ${money(row.total)}<br>Paid at purchase: Rs. ${money(row.paid)}<br>Credit at purchase: Rs. ${money(row.total-row.paid)}</p>`:`<div class="receipt-line"><span>Paid to supplier</span><strong>Rs. ${money(row.amount)}</strong></div>`}<p>Payment method: ${esc(row.method)}</p>`);
 }
-render();

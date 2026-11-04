@@ -134,3 +134,10 @@ In **Gas & inventory**, search receipts by date, size or reference. **Add cylind
 Sales, customer payments, supplier purchases/payments and gas receipts have receipt previews with **Print receipt / Save PDF**. Select your printer or Save as PDF in the browser print dialog. Receipts and the app show the Latif LPG Agency flame logo and business details: The Right Energy, Every Time; Palosy Road Near Shinqamar Resturent, Peshawar; Cell No: 03320981963.
 
 The selected customer ledger displays the time since their last recorded purchase, alongside the purchase date. Older date-only purchases are identified accordingly.
+
+
+## Central search and receipt centre
+
+The **Search all records** bar is available on every screen. Search by customer/supplier name, phone, invoice/reference, date, item or amount. Results include sales, customer and supplier payments, purchases, gas receipts, customers, suppliers, parts, cylinder movements, credit entries and expenses. Multiple search words narrow results; large result lists show the first 80 matches. Clear the search to hide results.
+
+Open **Receipts** in the sidebar or beside the search bar to find saved sales, collections, supplier purchases/payments and gas receipts. Each row offers **View receipt** and **Print receipt**; printing opens the browser printer/PDF dialog and never records another payment or sale. **Receive customer payment** records a new collection using the existing customer-ledger workflow.

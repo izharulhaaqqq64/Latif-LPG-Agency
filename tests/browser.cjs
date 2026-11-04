@@ -237,7 +237,7 @@ const assert = require('node:assert/strict');
  await page.locator('#quick-cash-form button').click();
  assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 760');
  // One credit workspace replaces three sidebar pages without losing balances.
- assert.equal(await page.locator('nav button').count(),10);
+ assert.equal(await page.locator('nav button').count(),11);
  assert.equal(await page.locator('nav [data-page="Automatic ledger"]').count(),0);
  await navigate('Customers & ledger');
  await page.locator('[data-action=credit-entry]').click();
@@ -583,6 +583,29 @@ const assert = require('node:assert/strict');
   const text=await page.locator('#content').innerText();
   assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|khata|diye|wapas|hisab|zyada|nahin)\b/i);
  }
+ // Central search finds records across screens and reprints without mutations.
+ await page.setViewportSize({width:1440,height:1100});
+ await page.locator('#global-search').fill('ahmed 0312');
+ assert.match(await page.locator('#global-search-results').innerText(),/Ahmed Ali/);
+ await page.locator('#global-search-results [data-record-type="Customer"]').click();
+ assert.equal(await page.locator('#ledger-customer').inputValue(),'c2');
+ await page.locator('#global-search').fill('no-such-record-987654');
+ assert.match(await page.locator('#global-search-results').innerText(),/0 matching/);
+ await page.locator('#clear-global-search').click();assert.equal(await page.locator('#global-search-results').isVisible(),false);
+ await navigate('Receipts');await page.locator('#receipt-search').fill('6000');
+ assert.match(await page.locator('#receipt-results').innerText(),/Empty.*container/);
+ const recordsBeforePrint=await page.evaluate(()=>JSON.stringify(state));
+ await page.evaluate(()=>{window.receiptPrintCalled=false});
+ await page.locator('#receipt-results [data-record-print]').first().click();
+ assert.equal(await page.evaluate(()=>window.receiptPrintCalled),true);
+ assert.match(await page.locator('.print-receipt').innerText(),/LATIF LPG AGENCY/);
+ assert.equal(await page.evaluate(()=>JSON.stringify(state)),recordsBeforePrint);
+ await page.locator('#close-dialog').click();
+ await page.locator('#global-search').fill('<img src=x onerror=alert(1)>');
+ assert.equal(await page.locator('#global-search-results img').count(),0);
+ await page.locator('#clear-global-search').click();
+ await page.setViewportSize({width:390,height:844});
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
  assert.deepEqual(errors,[]);
  console.log('PASS: branded printable receipts, empty-container sales and pricing, daily rates, search/converter, safe Save/Open, purchase age and existing business workflows.');
  await browser.close();
