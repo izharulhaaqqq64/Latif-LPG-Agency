@@ -37,3 +37,15 @@ document.addEventListener('click',e=>{
  if(e.target.closest('#mark-reminder-sent'))markReminderSent();
  const history=e.target.closest('[data-reminder-history]');if(history){const r=state.paymentReminders.find(row=>row.id===history.dataset.reminderHistory);if(r)showDetail('WhatsApp reminder · marked sent',`<p>${esc(customer(r.customer)?.name||'Customer')} · +${esc(r.phone)}<br>${esc(reminderTimestamp(r.createdAt))}</p><p class="reminder-message">${esc(r.message)}</p><p class="card-subtitle">Marked sent by you. Delivery is not verified. This is not a payment receipt.</p>`)}
 });
+
+function ledgerReminderBanner(c){
+ return `<section class="ledger-reminder-banner" aria-label="WhatsApp payment reminders"><div><strong>Payment reminders</strong><p>${c&&balance(c)>0?'Remind '+esc(c.name)+' about the pending payment.':'Choose a customer to send a payment reminder.'}</p></div><button type="button" class="button whatsapp-button" id="ledger-whatsapp-reminder" ${c&&balance(c)>0?'data-reminder="'+esc(c.id)+'"':'data-reminder-picker'}><span aria-hidden="true">☏</span> WhatsApp reminder</button></section>`;
+}
+function openReminderCustomerPicker(){
+ const customersDue=state.customers.filter(c=>balance(c)>0);
+ showDetail('Choose customer for WhatsApp reminder',customersDue.length?`<label class="field">Customer with pending payment<select id="reminder-customer-picker">${customersDue.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} · Rs. ${money(roundAmount(balance(c)))}</option>`).join('')}</select></label><button type="button" class="button whatsapp-button" id="preview-picked-reminder">Preview WhatsApp reminder</button>`:'<p>No customers have an outstanding payment.</p>');
+}
+document.addEventListener('click',e=>{
+ if(e.target.closest('[data-reminder-picker]'))openReminderCustomerPicker();
+ if(e.target.closest('#preview-picked-reminder'))openWhatsAppReminder(document.getElementById('reminder-customer-picker').value);
+});

@@ -186,7 +186,7 @@ Customer names in monthly, daily and weekly statements open their clickable mone
 
 ## WhatsApp payment reminders
 
-Select a customer with an outstanding payment in **Money & cylinder ledger**, then choose **WhatsApp reminder**. Add their optional mobile number using Edit contact / due date first. Local Pakistani 03xx numbers and international numbers with country codes are supported. Review the reminder with the customer's amount due, due date if set, cylinder balance and agency contact number.
+Use the highlighted green **WhatsApp reminder** button at the top of **Money & cylinder ledger**. From the combined ledger, choose a customer with an outstanding payment and preview the reminder. With a customer already selected, the button opens their reminder directly. Add their optional mobile number using Edit contact / due date first. Local Pakistani 03xx numbers and international numbers with country codes are supported. Review the reminder with the customer's amount due, due date if set, cylinder balance and agency contact number.
 
 **Open WhatsApp** opens the customer's chat with the prepared message. Press Send yourself in WhatsApp, then return and choose **Mark as sent**. Opening a chat alone does not mark it sent. The app cannot verify delivery; the status records your confirmation. Missing/invalid phone numbers disable opening and sent confirmation.
 
