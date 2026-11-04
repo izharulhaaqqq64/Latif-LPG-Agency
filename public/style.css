@@ -25,3 +25,5 @@
 .clickable-ledger-entry{cursor:pointer}.clickable-ledger-entry:hover{background:#f1f7ed}.clickable-ledger-entry:focus-visible{outline:2px solid #26734e;outline-offset:-2px}.ledger-entry-link{text-align:left;white-space:normal}.overview-shortcuts{justify-content:flex-start;flex-wrap:wrap}@media print{.overview-shortcuts{display:none!important}.ledger-entry-link{color:inherit;text-decoration:none}}
 
 @media print{.statement-ledger-link,.ledger-entry-link,dialog .statement-ledger-link,dialog .ledger-entry-link{display:inline!important;color:inherit;text-decoration:none}}
+
+.reminder-status{font-size:12px;color:#5a6d53;margin:12px 0}.reminder-actions{display:flex;gap:10px;flex-wrap:wrap}.reminder-actions button:disabled{opacity:.5;cursor:not-allowed}#reminder-draft{width:100%;box-sizing:border-box;min-height:160px}.reminder-message{white-space:pre-wrap;overflow-wrap:anywhere}

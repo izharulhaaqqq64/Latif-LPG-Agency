@@ -182,3 +182,12 @@ App branding and the Receipts section retain the supplied flame logo, **LATIF LP
 **Total daily cash** = gas/parts cash receipts + customer cash collections − cash operating expenses. Supplier payments do not reduce this daily figure. The monthly report has a separate **Supplier cash payments** card; its **Cash** value deducts those payments exactly once. Paid-now supplier purchase amounts and later cash payments are included; bank/wallet payments are excluded. Supplier settlement remains separate from expenses and net profit. Saved monthly closings retain these amounts; older snapshots without a recorded supplier total show Not recorded rather than being recalculated.
 
 Customer names in monthly, daily and weekly statements open their clickable money/cylinder ledger. The selected customer statement heading also opens the ledger. Invoice/payment/cylinder/manual-entry links inside it open the underlying saved detail. Viewing and printing leave business records unchanged.
+
+
+## WhatsApp payment reminders
+
+Select a customer with an outstanding payment in **Money & cylinder ledger**, then choose **WhatsApp reminder**. Add their optional mobile number using Edit contact / due date first. Local Pakistani 03xx numbers and international numbers with country codes are supported. Review the reminder with the customer's amount due, due date if set, cylinder balance and agency contact number.
+
+**Open WhatsApp** opens the customer's chat with the prepared message. Press Send yourself in WhatsApp, then return and choose **Mark as sent**. Opening a chat alone does not mark it sent. The app cannot verify delivery; the status records your confirmation. Missing/invalid phone numbers disable opening and sent confirmation.
+
+The ledger shows the last marked-sent time and message history. Records persist in browser storage and Save/Open backups. Sending/marking a reminder never changes money, gas, cash or cylinder balances. When payment is received, record it separately using **Credit · payment received**.

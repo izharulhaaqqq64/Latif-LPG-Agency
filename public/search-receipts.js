@@ -18,6 +18,7 @@ function businessRecords(){
  add('Cylinder movement',state.cylinders,r=>`${client(r)} ${r.direction} ${r.cylinderType||'Unspecified'} ${r.qty} cylinders ${r.capacity||''} kg ${r.note||''}`);
  add('Part',state.partItems,r=>`${r.name} ${r.sku||''}`);
  add('Parts movement',state.partMovements,r=>`${state.partItems.find(p=>p.id===r.part)?.name||''} ${r.direction} ${r.qty} ${r.note||''}`);
+ add('WhatsApp reminder',state.paymentReminders,r=>`${client(r)} ${r.phone} ${r.status} ${r.message}`,r=>r.amount);
  add('Customer debit',state.creditEntries,r=>`${client(r)} ${r.note||''}`,r=>r.amount);
  add('Empty cylinder movement',state.emptyCylinderMovements,r=>`${r.direction} ${r.qty} × ${r.capacity} kg ${r.note||''}`);
  add('Full cylinder movement',state.fullCylinderMovements,r=>`${r.direction} ${r.qty} × ${r.capacity} kg ${r.note||''}`);
