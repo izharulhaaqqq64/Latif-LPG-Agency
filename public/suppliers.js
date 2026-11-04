@@ -50,7 +50,7 @@ function submitSupplierForm(e){
     if(f.kind==='Gas'){
      if(!FULL_STOCK_SIZES.includes(f.capacity)||rate<=0||!['Main godown','Shop','Supply vehicle'].includes(f.warehouse))throw Error('Select a valid cylinder size, price and location.');const plantPurchase=calculatePlantPurchase([{capacity:f.capacity,quantity:String(qty)}],rate);totalCost=plantPurchase.totalCost;receipt={id:crypto.randomUUID(),date,createdAt,warehouse:f.warehouse,qty:plantPurchase.kg,purchaseCost:totalCost,plantPurchase,note:'Supplier credit · '+supplier.name+' · '+f.reference};
     }else{part=state.partItems.find(p=>p.id===f.part);if(!part)throw Error('Create and select a part item first.');totalCost=roundAmount(qty*rate)}
-    if(paid>totalCost)throw Error('Paid amount cannot exceed purchase total.');if(!f.reference.trim())throw Error('Enter a bill reference.');const purchase={id:crypto.randomUUID(),supplier:supplier.id,date,createdAt,kind:f.kind,qty,rate,total:totalCost,paid,method:f.method,reference:f.reference.trim()};
+    if(paid>totalCost)throw Error('Paid amount cannot exceed purchase total.');const purchase={id:crypto.randomUUID(),supplier:supplier.id,date,createdAt,kind:f.kind,qty,rate,total:totalCost,paid,method:f.method,reference:f.reference.trim()};
     if(receipt){receipt.supplierPurchase=purchase.id;state.stock.unshift(receipt);recordPlantCylinderReceipt(receipt);purchase.stockId=receipt.id;purchase.capacity=f.capacity}
     else{const movement={id:crypto.randomUUID(),part:part.id,direction:'In',qty,cost:rate,date,createdAt,supplierPurchase:purchase.id};state.partMovements.push(movement);purchase.part=part.id;purchase.partMovementId=movement.id}
     state.supplierPurchases.push(purchase);

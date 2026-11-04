@@ -13,11 +13,11 @@ To update, export a backup, close the server, extract the latest ZIP and start t
 ## One workspace per task
 
 - **Overview:** eight cards for sales, monthly revenue, active customers, gas stock, parts stock value, outstanding credit, daily expenses and empty-cylinder count, plus a dated Total daily cash panel, month-by-month revenue trend, cylinder-wise full stock and low-stock alerts. Inventory and account balances show the current position; sales, cash and expenses use the selected date. Detailed weights and transaction tables remain in their own sections. Initial demo records are retained and included in totals.
-- **Sales:** Daily cash sales and Customer sales & invoices tabs. Anonymous cash entries require only an amount, with separate entries/totals for each selected date. Optional kg reduces Shop stock. Named sales support full/partial payment, credit, retail/wholesale/supply and linked cylinder movements.
+- **Sales:** Daily sales, Customer sales & invoices and Sold cylinders tabs. Anonymous paid entries require only an amount, with separate entries/totals for each selected date. Optional kg reduces Shop stock. Named sales support full/partial payment, credit, retail/wholesale/supply and linked cylinder movements.
 - **Money & cylinder ledger:** one customer-selectable money/cylinder statement, without separate account or payment-history tabs. Customer, credit-entry, collection, due-date, reminder, CSV and print actions remain in the ledger. The selected customer statement retains cylinder sizes, last purchase date/time and elapsed purchase time. Monetary summaries show total debit and total credit only. Record other debts using Credit entry; gas invoices already post automatically and must not be manually reposted. Collections reduce debt. Statements can be printed or downloaded as CSV. Reminder drafts can be reviewed and downloaded locally; the app sends no messages.
 - **Gas & inventory:** full-cylinder counts for 11.8, 15 and 45.4 kg, measured gas kg, receipt breakdowns and purchase costs. Retail draws from Shop, wholesale from Main godown and supply from Supply vehicle.
 - **Supplier credit:** a separate supplier purchase/payment ledger for gas and parts bought on debt.
-- **Cylinder tracking:** new customer dispatches and returns for 11.8, 15 and 45.5 kg capacities. The 45.4 kg option is retired from tracking; historical movements and balances remain readable, and plant calculations still accept 45.4 kg. Returns must match the same customer's outstanding size. Legacy untyped movements remain under Size not recorded. Container movements alone do not change gas kg inventory.
+- **Cylinder tracking:** new customer dispatches and returns for 11.8, 15 and 45.4 kg capacities, with Original/Local types. Existing 45.5 kg movements remain readable and can be returned as their original size. Returns must match the same customer's outstanding size. Legacy untyped movements remain under Size not recorded. Container movements alone do not change gas kg inventory.
 - **Gas parts:** stock, actual cost/selling price/profit, and movement-history tabs. Purchases increase stock; cash sales decrease it. Actual cost uses a weighted average; each sale preserves its cost for gross profit. Untracked legacy invoices remain intact without invented costs.
 - **Gas calculator:** mixed plant purchases at a price per 11.8 kg unit, plus the KG/unit converter. Add cylinder quantities and actual capacities; `total kg = sum(quantity × capacity)`, `units = kg / 11.8`, and `cost = units × unit price`. For 40 × 15 kg + 10 × 45.4 kg, weight is 1,054 kg and units are 89.3220338983…; at Rs. 1,180/unit, cost is Rs. 105,400. Review and save to add purchased gas and cost to inventory. This is not a customer sale or supplier payment. 45.4 and 45.5 kg remain separate sizes.
 - **Expenses:** dated operating expenses with category, payment method and note. These are separate from inventory purchases. Daily and monthly reports include them; collections after expenses is not a complete cash/bank balance or net profit.
@@ -55,7 +55,7 @@ The ledger shows **Time since last purchase**, refreshing every minute. Recorded
 
 ## Total daily cash
 
-Overview and Daily cash sales use the same dated cash calculation: received cash on gas/parts/customer sales plus cash debt recoveries. Credit bill amounts, bank transfers and wallet payments are excluded. Cash expenses are shown separately; net daily cash flow deducts cash operating expenses and explicitly recorded supplier cash payments. It is not an opening-to-closing cash balance. Inventory purchases without a recorded payment are not assumed paid.
+Overview and Daily sales use the same dated net cash calculation: received cash on gas/parts/customer sales plus cash debt recoveries, less cash expenses and supplier cash payments. Credit bill amounts, bank transfers and wallet payments are excluded. The breakdown also shows cash expenses and supplier cash payments separately. It is not an opening-to-closing cash balance. Inventory purchases without a recorded payment are not assumed paid.
 
 New customer gas sales have an explicit payment-method selector. Older sales with no recorded payment method are counted as cash, matching the original cash-entry workflow; this assumption is shown beside the total. Existing records are not rewritten. The anonymous-entry subtotal remains separate from the total that includes all cash sales and recoveries.
 
@@ -105,7 +105,7 @@ These values are frozen in new monthly closing snapshots. Older snapshots are pr
 
 ## Cylinder-wise full stock and automatic net profit
 
-Use **Overview → Update counts** to enter the current physical full-cylinder count for 11.8, 15 and 45.4 kg. Counts include all earlier receipts/issues. New plant receipt line quantities and customer dispatches marked **full** update subsequent stock automatically. Uncheck the full-dispatch option for empty or other container movements. Manual full-cylinder receipts/issues are available for movements not already recorded. Known stock cannot be over-issued; before a count is set, no exact availability is claimed. Full-cylinder counts are independent of gas kg, empties and client-held balances. Kg-only cash sales cannot identify cylinder size and do not change full-cylinder counts automatically. The retired 45.4 kg client-tracking option stays retired; the dashboard's 45.4 kg full stock remains independently manageable.
+Use **Overview → Update counts** to enter the current physical full-cylinder count for 11.8, 15 and 45.4 kg. Counts include all earlier receipts/issues. New plant receipt line quantities and customer dispatches marked **full** update subsequent stock automatically. Uncheck the full-dispatch option for empty or other container movements. Manual full-cylinder receipts/issues are available for movements not already recorded. Known stock cannot be over-issued; before a count is set, no exact availability is claimed. Full-cylinder counts are independent of gas kg, empties and client-held balances. Kg-only cash sales cannot identify cylinder size and do not change full-cylinder counts automatically. Tracking and full-stock screens both use 11.8, 15 and 45.4 kg for new entries.
 
 Monthly **Net profit** is calculated automatically as invoice revenue minus gas cost of sales, parts cost of sales and recorded operating expenses. Gas cost uses a chronological pooled weighted average of dated receipts, or an explicitly entered actual unit cost for that sale. Parts use their recorded unit cost. Only sold inventory is expensed; unsold purchases remain stock. Credit sales count as revenue; recovered debt does not add revenue again. Purchases after the report period are excluded.
 
@@ -125,7 +125,7 @@ Supplier cash payments, including paid-now amounts, reduce daily and period cash
 
 ## Daily rates, inventory and receipts
 
-Overview stores a selling rate per kg for each date and shows the corresponding 11.8 kg, 15 kg and 45.5 kg gas prices. Changing a rate does not change saved invoices or actual inventory costs. New customer gas invoices use today's saved rate when available.
+Overview stores a selling rate per kg for each date and shows the corresponding 11.8 kg, 15 kg and 45.4 kg gas prices. Changing a rate does not change saved invoices or actual inventory costs. New customer gas invoices use today's saved rate when available.
 
 In **Gas & inventory**, search receipts by date, size or reference. **Add cylinder receipt** converts cylinder quantity and capacity into gas kg and 11.8 kg units automatically. Record the actual purchase cost for profit calculations. Use Supplier credit for supplier purchases instead of recording the same purchase twice. **Open** previews a saved receipt and offers printing.
 
@@ -141,3 +141,20 @@ The selected customer ledger displays the time since their last recorded purchas
 The **Search all records** bar is available on every screen. Search by customer/supplier name, phone, invoice/reference, date, item or amount. Results include sales, customer and supplier payments, purchases, gas receipts, customers, suppliers, parts, cylinder movements, credit entries and expenses. Multiple search words narrow results; large result lists show the first 80 matches. Clear the search to hide results.
 
 Open **Receipts** in the sidebar or beside the search bar to find saved sales, collections, supplier purchases/payments and gas receipts. Each row offers **View receipt** and **Print receipt**; printing opens the browser printer/PDF dialog and never records another payment or sale. **Receive customer payment** records a new collection using the existing customer-ledger workflow.
+
+
+## Daily operations update
+
+**Centralized search · Search anything** is visible on the main page and every workspace. Search names, optional contact details, dates, invoice numbers, payment methods, descriptions, stock and movements without first choosing a screen.
+
+Gas inventory uses **11.8 kg, 15 kg and 45.4 kg cylinder counts**. **Add cylinders** automatically records quantity × capacity as measured gas kg and adds full-cylinder movements once. **Add kg receipt** remains available for weight-only arrivals. Physical cylinder counts remain independent of measured gas: loose-kg sales cannot identify which cylinder size was used. Existing records, including legacy 45.5 kg entries, are preserved.
+
+The headline **Total daily cash** now shows cash sales + cash collections − cash expenses − recorded supplier cash payments. Bank/wallet transactions stay outside cash; the breakdown shows each deduction. This is the day's net movement, excluding opening cash.
+
+**Daily sales** accepts payment amount, optional gas kg, optional description and Cash / Bank transfer / Easypaisa-JazzCash. Entered kg reduce Shop gas stock once; blank kg remain unmeasured. No customer name is needed for these fully paid sales. The overview daily price list shows per kg and 11.8 / 15 / 45.4 kg prices calculated from the saved dated selling rate.
+
+Customers have optional mobile number and address fields. Edit them from a selected ledger using **Edit contact / due date**. Notes, descriptions and bill references are optional throughout; names, quantities, prices and necessary account selections are still required.
+
+New cylinder dispatches select **Original** or **Local** for every current size. Tracking shows both balances separately, and returns cannot exceed the selected size/type balance. Older movements without a recorded type remain **Unspecified**; use that option for their returns instead of relabelling history. Existing 45.5 kg cylinders are return-only, not relabelled as 45.4 kg.
+
+**Invoices** is a separate sidebar section for finding, viewing and printing sales invoices. **Receipts** remains the section for sales/payment/purchase receipts. Both use the agency branding and browser Print / Save PDF. Neither viewing nor printing creates a new financial entry.

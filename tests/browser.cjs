@@ -122,7 +122,7 @@ const assert = require('node:assert/strict');
  assert.match(await page.locator('#account-cylinder-sizes').innerText(),/Size not recorded: 4 pcs/);
  // Capacity-specific dispatches and returns cannot cancel another cylinder size.
  await navigate('Cylinder tracking');
- for(const [capacity,qty] of [['15','2'],['45.5','1']]){
+ for(const [capacity,qty] of [['15','2'],['45.4','1']]){
   await page.locator('[data-action=cylinder]').click();
   await page.locator('[name=customer]').selectOption('c5');
   await page.locator('[name=capacity]').selectOption(capacity);
@@ -141,7 +141,7 @@ const assert = require('node:assert/strict');
  await page.locator('#ledger-customer').selectOption('c5');
  assert.equal(await page.locator('#account-cylinders').innerText(),'2 pcs');
  assert.match(await page.locator('#account-cylinder-sizes').innerText(),/15 kg: 1 pcs/);
- assert.match(await page.locator('#account-cylinder-sizes').innerText(),/45.5 kg: 1 pcs/);
+ assert.match(await page.locator('#account-cylinder-sizes').innerText(),/45.4 kg: 1 pcs/);
  assert.match(await page.locator('#ledger-table').innerText(),/Cylinder.*15 kg/);
  // Calculator: kg <-> units and unit pricing, without posting a sale.
  await navigate('Gas calculator');
@@ -221,7 +221,7 @@ const assert = require('node:assert/strict');
  assert.equal(await page.locator('#reopen-month').count(),1);
  const savedSizes=await page.evaluate(()=>state.monthClosings[today().slice(0,7)].report.customers.find(c=>c.id==='c5').cylBySize);
  assert.equal(savedSizes.find(x=>x.capacity==='15').closing,1);
- assert.equal(savedSizes.find(x=>x.capacity==='45.5').closing,1);
+ assert.equal(savedSizes.find(x=>x.capacity==='45.4').closing,1);
  await navigate('Daily cash sales');
  await page.locator('#quick-cash-form [name=amount]').fill('999');
  await page.locator('#quick-cash-form button').click();
@@ -237,7 +237,7 @@ const assert = require('node:assert/strict');
  await page.locator('#quick-cash-form button').click();
  assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 760');
  // One credit workspace replaces three sidebar pages without losing balances.
- assert.equal(await page.locator('nav button').count(),11);
+ assert.equal(await page.locator('nav button').count(),12);
  assert.equal(await page.locator('nav [data-page="Automatic ledger"]').count(),0);
  await navigate('Customers & ledger');
  await page.locator('[data-action=credit-entry]').click();
@@ -288,7 +288,7 @@ const assert = require('node:assert/strict');
  // Empty stock requires explicit opening quantities and remains separate from gas.
  await navigate('Cylinder tracking');
  await page.locator('[data-action=cylinder]').click();
- assert.equal(await page.locator('[name=capacity] option[value="45.4"]').count(),0);
+ assert.equal(await page.locator('[name=capacity] option[value="45.4"]').count(),1);
  await page.locator('#cancel-dialog').click();
  const beforeEmpty=await page.evaluate(()=>({complete:emptyStockSummary().complete,counts:Object.fromEntries(TRACKING_CYLINDER_SIZES.map(size=>[size,emptyQuantity(size)])),gas:gasStock()}));
  assert.equal(beforeEmpty.complete,false);
@@ -352,9 +352,9 @@ const assert = require('node:assert/strict');
  assert.equal(cashTotals.previous.total,999);
  await navigate('Overview');
  await page.locator('#dashboard-date').fill(dates.previous);
- assert.equal(await page.locator('#dashboard-daily-cash').innerText(),'Rs. 125');
+ assert.equal(await page.locator('#dashboard-daily-cash').innerText(),'Rs. '+await page.evaluate(date=>money(dailyCash(date).net),dates.previous));
  await page.locator('#dashboard-date').fill(dates.now);
- const expectedDailyCash=await page.evaluate(()=>money(dailyCash(today()).total));
+ const expectedDailyCash=await page.evaluate(()=>money(dailyCash(today()).net));
  assert.equal(await page.locator('#dashboard-daily-cash').innerText(),'Rs. '+expectedDailyCash);
  await navigate('Daily cash sales');
  assert.equal(await page.locator('#sales-daily-cash').innerText(),'Rs. '+expectedDailyCash);
@@ -514,7 +514,7 @@ const assert = require('node:assert/strict');
  await navigate('Overview');await page.locator('#dashboard-date').fill(dates.now);
  const invoicesBeforeRates=await page.evaluate(()=>JSON.stringify(state.sales));
  await page.locator('[name=perKg]').fill('100');
- assert.match(await page.locator('#daily-rate-prices').innerText(),/1,180/);assert.match(await page.locator('#daily-rate-prices').innerText(),/1,500/);assert.match(await page.locator('#daily-rate-prices').innerText(),/4,550/);
+ assert.match(await page.locator('#daily-rate-prices').innerText(),/1,180/);assert.match(await page.locator('#daily-rate-prices').innerText(),/1,500/);assert.match(await page.locator('#daily-rate-prices').innerText(),/4,540/);
  await page.locator('#daily-rate-form button').click();
  assert.equal(await page.evaluate(()=>JSON.stringify(state.sales)),invoicesBeforeRates);
  await navigate('Sales & invoices');await page.locator('[data-action=sale]').click();assert.equal(await page.locator('[name=rate]').inputValue(),'100');await page.locator('#cancel-dialog').click();
@@ -606,6 +606,56 @@ const assert = require('node:assert/strict');
  await page.locator('#clear-global-search').click();
  await page.setViewportSize({width:390,height:844});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),true);
+ // Expanded daily sale: optional kg/description and online receipts stay out of cash.
+ await page.setViewportSize({width:1440,height:1100});await navigate('Daily cash sales');
+ await page.locator('#cash-date').fill(await page.evaluate(()=>today()));
+ const beforeOnline=await page.evaluate(()=>({kg:gasStock(),cash:dailyCash(today()).net}));
+ await page.locator('#quick-cash-form [name=amount]').fill('200');
+ await page.locator('#quick-cash-form [name=gasQty]').fill('1');
+ await page.locator('#quick-cash-form [name=description]').fill('Small refill online');
+ await page.locator('#quick-cash-form [name=method]').selectOption('Bank transfer');
+ await page.locator('#quick-cash-form button').click();
+ assert.equal(await page.evaluate(()=>state.sales[0].method),'Bank transfer');
+ assert.equal(await page.evaluate(()=>state.sales[0].description),'Small refill online');
+ assert.equal(await page.evaluate(()=>gasStock()),beforeOnline.kg-1);
+ assert.equal(await page.evaluate(()=>dailyCash(today()).net),beforeOnline.cash);
+ await navigate('Expenses');await page.locator('#expense-date').fill(await page.evaluate(()=>today()));
+ await page.locator('[data-action=expense]').click();await page.locator('[name=amount]').fill('20');
+ await page.locator('[name=note]').fill('');await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.locator('dialog').evaluate(e=>e.open),false);
+ await navigate('Overview');assert.equal(await page.locator('#dashboard-daily-cash').innerText(),'Rs. '+await page.evaluate(()=>money(dailyCash(today()).net)));
+ assert.equal(await page.evaluate(()=>dailyCash(today()).net),beforeOnline.cash-20);
+ assert.match(await page.locator('#daily-rate-prices').innerText(),/45.4 kg/);
+ // Optional contacts can be added and edited from the ledger, then searched centrally.
+ await navigate('Automatic ledger');await page.locator('[data-action=customer]').click();
+ await page.locator('[name=name]').fill('Optional contact client');
+ assert.equal(await page.locator('[name=phone]').getAttribute('required'),null);
+ assert.equal(await page.locator('[name=address]').getAttribute('required'),null);
+ await page.getByRole('button',{name:'Save entry'}).click();
+ const contactId=await page.evaluate(()=>state.customers.find(c=>c.name==='Optional contact client').id);
+ await page.locator('#ledger-customer').selectOption(contactId);await page.locator('[data-customer-terms]').click();
+ await page.locator('[name=phone]').fill('03001112233');await page.locator('[name=address]').fill('Palosy contact test');
+ await page.getByRole('button',{name:'Save entry'}).click();assert.match(await page.locator('.ledger-context').innerText(),/03001112233.*Palosy contact test/);
+ await page.locator('#global-search').fill('Palosy contact test');assert.match(await page.locator('#global-search-results').innerText(),/Optional contact client/);await page.locator('#clear-global-search').click();
+ // Original and Local quantities are independent for all three current sizes.
+ await navigate('Cylinder tracking');
+ for(const size of ['11.8','15','45.4'])for(const type of ['Original','Local']){
+  await page.locator('[data-action=cylinder]').click();await page.locator('[name=customer]').selectOption(contactId);
+  await page.locator('[name=capacity]').selectOption(size);await page.locator('[name=cylinderType]').selectOption(type);
+  await page.locator('[name=qty]').fill('1');await page.locator('[name=fullDispatch]').uncheck();await page.locator('dialog details.simple-details > summary').click();await page.locator('[name=note]').fill('');
+  await page.getByRole('button',{name:'Save entry'}).click();assert.equal(await page.locator('dialog').evaluate(e=>e.open),false);
+ }
+ await page.locator('[data-action=cylinder]').click();await page.locator('[name=customer]').selectOption(contactId);await page.locator('[name=capacity]').selectOption('15');await page.locator('[name=cylinderType]').selectOption('Local');await page.locator('[name=direction]').selectOption('In');await page.locator('[name=returnEmpty]').uncheck();await page.locator('[name=qty]').fill('2');
+ await page.getByRole('button',{name:'Save entry'}).click();assert.match(await page.locator('#form-error').innerText(),/size and type/);
+ await page.locator('[name=qty]').fill('1');await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.evaluate(id=>cylinderTypeBalance(id,'15','Original'),contactId),1);assert.equal(await page.evaluate(id=>cylinderTypeBalance(id,'15','Local'),contactId),0);
+ const legacyType=await page.evaluate(id=>{const previous=structuredClone(state);try{state.cylinders.push({id:'legacy-type-check',customer:id,capacity:'45.5',qty:1,direction:'Out',date:today()});const before=cylinderTypeBalance(id,'45.5','Unspecified');recordCylinderMovement({id:'legacy-type-return',customer:id,capacity:'45.5',cylinderType:'Unspecified',qty:1,direction:'In',date:today()},false);return {before,after:cylinderTypeBalance(id,'45.5','Unspecified')}}finally{state=previous}},contactId);assert.deepEqual(legacyType,{before:1,after:0});
+ // Distinct invoice tab prints a labelled invoice without adding records.
+ await navigate('Invoices');await page.locator('#invoice-search').fill('Small refill online');
+ await page.locator('[data-sale-invoice]').first().click();assert.match(await page.locator('.receipt-document-title').innerText(),/^Invoice #INV-/);await page.locator('#close-dialog').click();
+ assert.equal(await page.evaluate(()=>validateBackup(backupPayload()).customers.find(c=>c.name==='Optional contact client').address),'Palosy contact test');
+ await page.reload();await page.locator('#global-search').fill('03001112233');assert.match(await page.locator('#global-search-results').innerText(),/Optional contact client/);await page.locator('#clear-global-search').click();
+ await page.setViewportSize({width:390,height:844});await page.locator('#menu').click();await navigate('Daily cash sales');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  assert.deepEqual(errors,[]);
  console.log('PASS: branded printable receipts, empty-container sales and pricing, daily rates, search/converter, safe Save/Open, purchase age and existing business workflows.');
  await browser.close();
