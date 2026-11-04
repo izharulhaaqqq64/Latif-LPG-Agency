@@ -2,7 +2,7 @@ const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
- const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:3000');
+ const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(process.env.LPG_TEST_URL||'http://127.0.0.1:3000');
  await page.evaluate(()=>{
   const date=today(),createdAt=new Date().toISOString();
   state=validateBackup({customers:[{id:'c',name:'Test client',phone:'03001234567',opening:500}],sales:[],receipts:[],stock:[{id:'g',date,createdAt,warehouse:'Shop',qty:1000,purchaseCost:10000,note:'Opening gas'}],cylinders:[],partItems:[{id:'p',name:'Regulator',sellingRate:200}],partMovements:[{id:'pm',part:'p',direction:'In',qty:10,cost:100,date,createdAt}],suppliers:[{id:'s',name:'Plant',opening:1000,date}],emptyCylinderOpening:{'11.8':{qty:5,date,asOf:'2000-01-01T00:00:00.000Z',tareKg:12}},fullCylinderCounts:[{id:'fc',capacity:'11.8',qty:20,date,createdAt:'2000-01-01T00:00:00.000Z'}]});

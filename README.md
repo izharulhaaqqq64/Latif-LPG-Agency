@@ -1,18 +1,18 @@
 # Latif LPG Agency
 
-A responsive English-language LPG business application for Windows, mobile browsers and desktop browsers.
+A private English-language LPG business application with one-owner login, shared SQLite storage and responsive laptop/mobile screens. See **[PRIVATE-SETUP.md](PRIVATE-SETUP.md)** for account creation, migration and HTTPS hosting.
 
 ## Run
 
-Requires Node.js 20+. Run `npm start` from the project folder; the default port is 3000 (`PORT` can override it). No runtime packages or database installation are needed.
+Requires Node.js 24+. Run `npm start` from the project folder; the default port is 3000 (`PORT` can override it). SQLite is included in Node; no runtime packages or separate database installation are needed. Create your owner login using the one-time setup code displayed in the server window.
 
 On Windows 11, install Node.js LTS, download the GitHub ZIP, extract it, and double-click **START-APP.bat**. Keep the server window open. Refresh the browser if startup takes more than three seconds.
 
-To update, export a backup, close the server, extract the latest ZIP and start the new folder. Use the same browser and `http://localhost:3000` to retain existing data. Do not clear browser storage.
+To update, export a backup, wait for Synced, close the old server, extract the latest ZIP and start the new folder. Windows keeps the database in `%LOCALAPPDATA%\Latif LPG Agency\data`; other systems must preserve LPG_DATA_DIR (or the existing data folder). Version 1 browser data can be explicitly imported on first setup or through Open backup.
 
 ## One workspace per task
 
-- **Overview:** eight cards for sales, monthly revenue, active customers, gas stock, parts stock value, outstanding credit, daily expenses and empty-cylinder count, plus a dated Total daily cash panel, month-by-month revenue trend, cylinder-wise full stock and low-stock alerts. Inventory and account balances show the current position; sales, cash and expenses use the selected date. Detailed weights and transaction tables remain in their own sections. Initial demo records are retained and included in totals.
+- **Overview:** eight cards for sales, monthly revenue, active customers, gas stock, parts stock value, outstanding credit, daily expenses and empty-cylinder count, plus a dated Total daily cash panel, month-by-month revenue trend, cylinder-wise full stock and low-stock alerts. Inventory and account balances show the current position; sales, cash and expenses use the selected date. Detailed weights and transaction tables remain in their own sections. New private workspaces start empty. Imported legacy/demo records are retained if you choose to import them.
 - **Sales:** Daily sales, Customer sales & invoices and Sold cylinders tabs. Anonymous paid entries require only an amount, with separate entries/totals for each selected date. Optional kg reduces Shop stock. Named sales support full/partial payment, credit, retail/wholesale/supply and linked cylinder movements.
 - **Money & cylinder ledger:** one customer-selectable money/cylinder statement, without separate account or payment-history tabs. Customer, credit-entry, collection, due-date, reminder, CSV and print actions remain in the ledger. The selected customer statement retains cylinder sizes, last purchase date/time and elapsed purchase time. Monetary summaries show total debit and total credit only. Record other debts using Credit entry; gas invoices already post automatically and must not be manually reposted. Collections reduce debt. Statements can be printed or downloaded as CSV. Reminder drafts can be reviewed and downloaded locally; the app sends no messages.
 - **Gas & inventory:** full-cylinder counts for 11.8, 15 and 45.5 kg, measured gas kg, receipt breakdowns and purchase costs. Retail draws from Shop, wholesale from Main godown and supply from Supply vehicle.
@@ -33,13 +33,13 @@ Amounts are rounded to two decimals. Gas unit pricing uses full intermediate pre
 
 ## Storage and backups
 
-Data remains in this browser's localStorage under `latif-lpg-v1`. New fields are initialized without resetting sales, customers, receipts, cylinders, parts or closing snapshots. Existing names, notes and saved records are not translated or deleted. JSON export includes the complete saved state; CSV statements contain ledger rows and running money/cylinder balances. Use **Save backup** to download a complete JSON backup. **Open backup** accepts current backups and older raw-state exports (up to 10 MB), validates the records and shows a preview. **Restore backup** replaces the current browser records only after confirmation; save your current backup first. A safety copy of the previous browser data is also retained locally under `latif-lpg-before-open`. Invalid files do not change current records.
+The authoritative records are in the private server’s SQLite database. A device cache remains in localStorage under `latif-lpg-v1`, with queued pending saves and revision checks. Check the header status to confirm synchronization. New fields are initialized without resetting sales, customers, receipts, cylinders, parts or closing snapshots. Existing names, notes and saved records are not translated or deleted. JSON export includes the complete saved state; CSV statements contain ledger rows and running money/cylinder balances. Use **Save backup** to download a complete JSON backup. **Open backup** accepts current backups and older raw-state exports (up to 10 MB), validates the records and shows a preview. **Restore backup** replaces the shared records only after confirmation and sync validation; save your current backup first. A safety copy of the previous browser data is also retained locally under `latif-lpg-before-open`. Invalid files do not change current records.
 
-There is no authentication, server database, cross-device synchronization or automatic cloud backup. Publication/deployment is separate from running the app locally. The monthly report reconciles customer/inventory records and calculates net profit when recorded costs are complete. It is not statutory accounts; expenses and costs not entered in the app cannot be included.
+Owner authentication, a shared database and conflict-safe synchronization are included. Hosting/deployment is separate from running locally. Server recovery retains 20 previous revisions and snapshots for the last 30 active days; these are not offsite backups. See PRIVATE-SETUP.md. The monthly report reconciles customer/inventory records and calculates net profit when recorded costs are complete. It is not statutory accounts; expenses and costs not entered in the app cannot be included.
 
 ## Validation
 
-With the app running, Playwright installed and Chromium available at `/usr/bin/chromium`, run `npm test`. Browser tests cover the consolidated navigation, credit and recoveries, due-date context, reminder drafts, CSV statements, last purchase, expenses/reports, persistence, monthly lock/carry-forward, mixed plant purchases, gas calculations, parts costing, size-matched cylinder returns and mobile layouts. The browser dependency is only needed for tests.
+With Playwright installed and Chromium available at `/usr/bin/chromium`, run `npm test`. The test runner starts isolated local servers and temporary databases. Browser tests cover the consolidated navigation, credit and recoveries, due-date context, reminder drafts, CSV statements, last purchase, expenses/reports, persistence, monthly lock/carry-forward, mixed plant purchases, gas calculations, parts costing, size-matched cylinder returns and mobile layouts. The browser dependency is only needed for tests.
 
 
 ## Empty cylinders and last-purchase elapsed time
@@ -204,3 +204,8 @@ Changes are checked for newly negative gas/parts/empty/full stock, overpaid cust
 Delete always opens a review dialog. **Save backup first** downloads the current records. A successful change also retains the previous full state locally; open the manager and choose **Download state before last change** to recover that JSON through Open backup. This keeps only the latest pre-change state; download regular backups for longer history. Storage failures or validation errors roll back the proposed change.
 
 To revise a saved closing, choose Edit in the manager and confirm **Reopen for editing**; correct its source entries and save it again. Delete removes the saved snapshot only. Both actions respect later dependent closings. Never edit a calculated report total separately from its transactions.
+
+
+## Private server release
+
+Version 2 adds private owner setup/login, password changes, 12-hour sessions, shared storage, safe device migration, queued saves, conflict recovery and server recovery downloads. All business functions remain available after signing in. Read [PRIVATE-SETUP.md](PRIVATE-SETUP.md) before deployment. Existing notes about browser storage refer to the device cache; the server database is authoritative once synchronized.

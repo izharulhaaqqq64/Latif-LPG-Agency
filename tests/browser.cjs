@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
  };
  const assertLedgerBalance=async(expected)=>{const debit=Number((await page.locator('#ledger-total-value').innerText()).replace('Rs.','').replace(/,/g,'').trim()),credit=Number((await page.locator('#ledger-total-credit').innerText()).replace('Rs.','').replace(/,/g,'').trim());assert.equal(debit-credit,expected)};
  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
- await page.goto('http://127.0.0.1:3000');
+ await page.goto(process.env.LPG_TEST_URL||'http://127.0.0.1:3000');
  await page.screenshot({path:'/tmp/latif-desktop.png',fullPage:true});
  await navigate('Sales & invoices');
  await page.locator('[data-action=sale]').click();

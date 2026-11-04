@@ -48,7 +48,7 @@ function prepareBackupOpen(payload){
 function restorePendingBackup(){
  try{
   if(!pendingBackup)throw Error('Choose and validate a backup first.');const restored=validateBackup(pendingBackup),previous=JSON.stringify(state);
-  localStorage.setItem('latif-lpg-before-open',previous);localStorage.setItem('latif-lpg-v1',JSON.stringify(restored));state=restored;pendingBackup=null;
+  localStorage.setItem('latif-lpg-before-open',previous);if(window.lpgSync)window.lpgSync.save(restored);else localStorage.setItem('latif-lpg-v1',JSON.stringify(restored));state=restored;pendingBackup=null;
   page='Overview';query='';bookCustomer='';supplierFilter='';salesView='cash';reportsView='daily';dashboardDate=today();cashDate=today();reportDate=today();expenseDate=today();closingMonth=today().slice(0,7);dailyClosingDate=today();weeklyClosingDate=today();plantDraft=null;
   document.getElementById('entry-dialog').close();render();toast('Backup opened successfully.');
  }catch(err){document.getElementById('form-error').textContent=err.message}

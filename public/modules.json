@@ -1,0 +1,20 @@
+[
+  "app.js",
+  "workflows.js",
+  "trading.js",
+  "closing.js",
+  "capacities.js",
+  "plant.js",
+  "management.js",
+  "empties.js",
+  "dashboard.js",
+  "periods.js",
+  "summary.js",
+  "stock-profit.js",
+  "suppliers.js",
+  "files-rates.js",
+  "receipts-sales.js",
+  "reminders.js",
+  "record-editor.js",
+  "search-receipts.js"
+]
