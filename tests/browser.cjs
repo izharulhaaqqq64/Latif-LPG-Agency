@@ -122,7 +122,7 @@ const assert = require('node:assert/strict');
  assert.match(await page.locator('#account-cylinder-sizes').innerText(),/Size not recorded: 4 pcs/);
  // Capacity-specific dispatches and returns cannot cancel another cylinder size.
  await navigate('Cylinder tracking');
- for(const [capacity,qty] of [['15','2'],['45.4','1']]){
+ for(const [capacity,qty] of [['15','2'],['45.5','1']]){
   await page.locator('[data-action=cylinder]').click();
   await page.locator('[name=customer]').selectOption('c5');
   await page.locator('[name=capacity]').selectOption(capacity);
@@ -141,7 +141,7 @@ const assert = require('node:assert/strict');
  await page.locator('#ledger-customer').selectOption('c5');
  assert.equal(await page.locator('#account-cylinders').innerText(),'2 pcs');
  assert.match(await page.locator('#account-cylinder-sizes').innerText(),/15 kg: 1 pcs/);
- assert.match(await page.locator('#account-cylinder-sizes').innerText(),/45.4 kg: 1 pcs/);
+ assert.match(await page.locator('#account-cylinder-sizes').innerText(),/45.5 kg: 1 pcs/);
  assert.match(await page.locator('#ledger-table').innerText(),/Cylinder.*15 kg/);
  // Calculator: kg <-> units and unit pricing, without posting a sale.
  await navigate('Gas calculator');
@@ -221,7 +221,7 @@ const assert = require('node:assert/strict');
  assert.equal(await page.locator('#reopen-month').count(),1);
  const savedSizes=await page.evaluate(()=>state.monthClosings[today().slice(0,7)].report.customers.find(c=>c.id==='c5').cylBySize);
  assert.equal(savedSizes.find(x=>x.capacity==='15').closing,1);
- assert.equal(savedSizes.find(x=>x.capacity==='45.4').closing,1);
+ assert.equal(savedSizes.find(x=>x.capacity==='45.5').closing,1);
  await navigate('Daily cash sales');
  await page.locator('#quick-cash-form [name=amount]').fill('999');
  await page.locator('#quick-cash-form button').click();
@@ -288,12 +288,12 @@ const assert = require('node:assert/strict');
  // Empty stock requires explicit opening quantities and remains separate from gas.
  await navigate('Cylinder tracking');
  await page.locator('[data-action=cylinder]').click();
- assert.equal(await page.locator('[name=capacity] option[value="45.4"]').count(),1);
+ assert.equal(await page.locator('[name=capacity] option[value="45.5"]').count(),1);
  await page.locator('#cancel-dialog').click();
  const beforeEmpty=await page.evaluate(()=>({complete:emptyStockSummary().complete,counts:Object.fromEntries(TRACKING_CYLINDER_SIZES.map(size=>[size,emptyQuantity(size)])),gas:gasStock()}));
  assert.equal(beforeEmpty.complete,false);
  await page.locator('#empty-stock-details > summary').click();
- for(const [capacity,qty,tare] of [['11.8','10','12'],['15','5','15'],['45.4','2','30']]){
+ for(const [capacity,qty,tare] of [['11.8','10','12'],['15','5','15'],['45.5','2','30']]){
   await page.locator('[data-action=empty-opening]').click();
   await page.locator('[name=capacity]').selectOption(capacity);
   await page.locator('[name=qty]').fill(qty);
@@ -375,19 +375,19 @@ const assert = require('node:assert/strict');
  assert.match(await page.locator('.dashboard-insights').innerText(),/Stock overview/);
  // Set actual full-cylinder counts, then save cylinder-wise alert levels.
  await page.locator('[data-action=filled-stock]').first().click();
- for(const [i,size] of ['11.8','15','45.4'].entries()){
+ for(const [i,size] of ['11.8','15','45.5'].entries()){
   if(i)await page.locator('[data-action=filled-stock]').first().click();
   await page.locator('[name=capacity]').selectOption(size);await page.locator('[name=qty]').fill('10');
   await page.getByRole('button',{name:'Save entry'}).click();
  }
- assert.match(await page.locator('.dashboard-insights table').innerText(),/45.4 kg/);
+ assert.match(await page.locator('.dashboard-insights table').innerText(),/45.5 kg/);
  assert.doesNotMatch(await page.locator('.dashboard-insights table').innerText(),/Main godown/);
  await page.locator('.alert-settings summary').click();
- await page.locator('[name="level-11.8"]').fill('12');await page.locator('[name="level-15"]').fill('0');await page.locator('[name="level-45.4"]').fill('0');
+ await page.locator('[name="level-11.8"]').fill('12');await page.locator('[name="level-15"]').fill('0');await page.locator('[name="level-45.5"]').fill('0');
  await page.locator('#stock-alert-settings button').click();
  assert.match(await page.locator('.stock-alert-list').innerText(),/11.8 kg cylinders/);
  await page.reload();
- assert.deepEqual(await page.evaluate(()=>state.cylinderAlertLevels),{'11.8':12,'15':0,'45.4':0});
+ assert.deepEqual(await page.evaluate(()=>state.cylinderAlertLevels),{'11.8':12,'15':0,'45.5':0});
  await navigate('Cylinder tracking');
  await page.locator('[data-action=cylinder]').click();await page.locator('[name=customer]').selectOption('c5');await page.locator('[name=capacity]').selectOption('15');await page.locator('[name=qty]').fill('999');
  await page.getByRole('button',{name:'Save entry'}).click();assert.match(await page.locator('#form-error').innerText(),/Not enough full/);
@@ -509,12 +509,12 @@ const assert = require('node:assert/strict');
  assert.equal(await page.evaluate(()=>monthlyDashboardData(today().slice(0,7)).revenue),supplierBefore.revenue);
  assert.equal(await page.evaluate(()=>balance(customer('c5'))),21700);
  await page.reload();await navigate('Supplier credit');assert.match(await page.locator('#content').innerText(),/3,050/);
- await navigate('Gas & inventory');const gasText=await page.locator('#content').innerText();for(const size of ['11.8 kg cylinders','15 kg cylinders','45.4 kg cylinders'])assert.ok(gasText.includes(size));
+ await navigate('Gas & inventory');const gasText=await page.locator('#content').innerText();for(const size of ['11.8 kg cylinders','15 kg cylinders','45.5 kg cylinders'])assert.ok(gasText.includes(size));
  // Daily rates are dated selling prices and do not change saved invoices.
  await navigate('Overview');await page.locator('#dashboard-date').fill(dates.now);
  const invoicesBeforeRates=await page.evaluate(()=>JSON.stringify(state.sales));
  await page.locator('[name=perKg]').fill('100');
- assert.match(await page.locator('#daily-rate-prices').innerText(),/1,180/);assert.match(await page.locator('#daily-rate-prices').innerText(),/1,500/);assert.match(await page.locator('#daily-rate-prices').innerText(),/4,540/);
+ assert.match(await page.locator('#daily-rate-prices').innerText(),/1,180/);assert.match(await page.locator('#daily-rate-prices').innerText(),/1,500/);assert.match(await page.locator('#daily-rate-prices').innerText(),/4,550/);
  await page.locator('#daily-rate-form button').click();
  assert.equal(await page.evaluate(()=>JSON.stringify(state.sales)),invoicesBeforeRates);
  await navigate('Sales & invoices');await page.locator('[data-action=sale]').click();assert.equal(await page.locator('[name=rate]').inputValue(),'100');await page.locator('#cancel-dialog').click();
@@ -625,7 +625,7 @@ const assert = require('node:assert/strict');
  assert.equal(await page.locator('dialog').evaluate(e=>e.open),false);
  await navigate('Overview');assert.equal(await page.locator('#dashboard-daily-cash').innerText(),'Rs. '+await page.evaluate(()=>money(dailyCash(today()).net)));
  assert.equal(await page.evaluate(()=>dailyCash(today()).net),beforeOnline.cash-20);
- assert.match(await page.locator('#daily-rate-prices').innerText(),/45.4 kg/);
+ assert.match(await page.locator('#daily-rate-prices').innerText(),/45.5 kg/);
  // Optional contacts can be added and edited from the ledger, then searched centrally.
  await navigate('Automatic ledger');await page.locator('[data-action=customer]').click();
  await page.locator('[name=name]').fill('Optional contact client');
@@ -639,7 +639,7 @@ const assert = require('node:assert/strict');
  await page.locator('#global-search').fill('Palosy contact test');assert.match(await page.locator('#global-search-results').innerText(),/Optional contact client/);await page.locator('#clear-global-search').click();
  // Original and Local quantities are independent for all three current sizes.
  await navigate('Cylinder tracking');
- for(const size of ['11.8','15','45.4'])for(const type of ['Original','Local']){
+ for(const size of ['11.8','15','45.5'])for(const type of ['Original','Local']){
   await page.locator('[data-action=cylinder]').click();await page.locator('[name=customer]').selectOption(contactId);
   await page.locator('[name=capacity]').selectOption(size);await page.locator('[name=cylinderType]').selectOption(type);
   await page.locator('[name=qty]').fill('1');await page.locator('[name=fullDispatch]').uncheck();await page.locator('dialog details.simple-details > summary').click();await page.locator('[name=note]').fill('');
@@ -649,13 +649,48 @@ const assert = require('node:assert/strict');
  await page.getByRole('button',{name:'Save entry'}).click();assert.match(await page.locator('#form-error').innerText(),/size and type/);
  await page.locator('[name=qty]').fill('1');await page.getByRole('button',{name:'Save entry'}).click();
  assert.equal(await page.evaluate(id=>cylinderTypeBalance(id,'15','Original'),contactId),1);assert.equal(await page.evaluate(id=>cylinderTypeBalance(id,'15','Local'),contactId),0);
- const legacyType=await page.evaluate(id=>{const previous=structuredClone(state);try{state.cylinders.push({id:'legacy-type-check',customer:id,capacity:'45.5',qty:1,direction:'Out',date:today()});const before=cylinderTypeBalance(id,'45.5','Unspecified');recordCylinderMovement({id:'legacy-type-return',customer:id,capacity:'45.5',cylinderType:'Unspecified',qty:1,direction:'In',date:today()},false);return {before,after:cylinderTypeBalance(id,'45.5','Unspecified')}}finally{state=previous}},contactId);assert.deepEqual(legacyType,{before:1,after:0});
+ const legacyType=await page.evaluate(id=>{const previous=structuredClone(state);try{state.cylinders.push({id:'legacy-type-check',customer:id,capacity:'45.4',qty:1,direction:'Out',date:today()});const before=cylinderTypeBalance(id,'45.4','Unspecified');recordCylinderMovement({id:'legacy-type-return',customer:id,capacity:'45.4',cylinderType:'Unspecified',qty:1,direction:'In',date:today()},false);return {before,after:cylinderTypeBalance(id,'45.4','Unspecified')}}finally{state=previous}},contactId);assert.deepEqual(legacyType,{before:1,after:0});
  // Distinct invoice tab prints a labelled invoice without adding records.
  await navigate('Invoices');await page.locator('#invoice-search').fill('Small refill online');
  await page.locator('[data-sale-invoice]').first().click();assert.match(await page.locator('.receipt-document-title').innerText(),/^Invoice #INV-/);await page.locator('#close-dialog').click();
  assert.equal(await page.evaluate(()=>validateBackup(backupPayload()).customers.find(c=>c.name==='Optional contact client').address),'Palosy contact test');
  await page.reload();await page.locator('#global-search').fill('03001112233');assert.match(await page.locator('#global-search-results').innerText(),/Optional contact client/);await page.locator('#clear-global-search').click();
  await page.setViewportSize({width:390,height:844});await page.locator('#menu').click();await navigate('Daily cash sales');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ // All ledger entry types open from their row or link without changing records.
+ await page.setViewportSize({width:1440,height:1100});await navigate('Automatic ledger');await page.locator('#ledger-customer').selectOption('');
+ assert.equal(await page.locator('#ledger-table tbody tr').count(),await page.locator('#ledger-table tr[data-ledger-record-id]').count());
+ const beforeLedgerViews=await page.evaluate(()=>JSON.stringify(state));
+ for(const type of ['Opening','Sale','Customer payment','Customer debit','Cylinder movement']){
+  await page.locator(`#ledger-table .ledger-entry-link[data-ledger-record-type="${type}"]`).first().click();
+  assert.equal(await page.locator('dialog').evaluate(e=>e.open),true);assert.ok((await page.locator('#form-fields').innerText()).length>20);await page.locator('#close-dialog').click();
+ }
+ await page.locator('#ledger-table tr[data-ledger-record-type="Opening"]').first().focus();await page.keyboard.press('Enter');assert.match(await page.locator('#dialog-title').innerText(),/Opening customer balance/);await page.locator('#close-dialog').click();
+ assert.equal(await page.evaluate(()=>JSON.stringify(state)),beforeLedgerViews);
+ await page.locator('#ledger-customer').selectOption(contactId);
+ const beforeDirect=await page.evaluate(id=>({balance:balance(customer(id)),cash:dailyCash(today()).net,sales:state.sales.length}),contactId);
+ await page.locator('[data-action=credit-entry]').click();assert.equal(await page.locator('[name=customer]').inputValue(),contactId);await page.locator('[name=amount]').fill('50');await page.locator('[name=note]').fill('');await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.evaluate(id=>balance(customer(id)),contactId),beforeDirect.balance+50);assert.equal(await page.evaluate(()=>state.sales.length),beforeDirect.sales);
+ await page.locator('#ledger-collect').click();assert.equal(await page.locator('[name=customer]').inputValue(),contactId);await page.locator('[name=amount]').fill('20');await page.locator('[name=note]').fill('');await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.evaluate(id=>balance(customer(id)),contactId),beforeDirect.balance+30);assert.equal(await page.evaluate(()=>dailyCash(today()).net),beforeDirect.cash+20);
+ assert.equal(await page.locator('#ledger-total-value').innerText(),'Rs. 50');assert.equal(await page.locator('#ledger-total-credit').innerText(),'Rs. 20');
+ // Parts cash is visible and included once; online parts payments never enter cash.
+ await navigate('Gas parts');
+ const beforePartCash=await page.evaluate(()=>dailyCash(today()).net);
+ await page.locator('[data-action=part-sale]').click();await page.locator('[name=qty]').fill('1');await page.locator('[name=rate]').fill('300');await page.getByRole('button',{name:'Save entry'}).click();
+ assert.equal(await page.evaluate(()=>dailyCash(today()).net),beforePartCash+300);
+ await navigate('Overview');await page.locator('#dashboard-date').fill(await page.evaluate(()=>today()));
+ assert.match(await page.locator('#parts-cash-payments').innerText(),/Rs./);assert.equal(await page.locator('#parts-cash-payments').innerText(),'Rs. '+await page.evaluate(()=>money(state.sales.filter(s=>s.date===today()&&s.kind==='Parts'&&(s.method||'Cash')==='Cash').reduce((n,s)=>n+s.paid,0))));
+ await page.locator('#focus-global-search').click();assert.equal(await page.locator('#global-search').evaluate(el=>document.activeElement===el),true);
+ for(const size of ['11.8','15','45.5'])assert.ok((await page.locator('.dashboard-insights table').innerText()).includes(size+' kg'));
+ // Supplier tabs retain complete totals while displaying only the requested side.
+ await navigate('Supplier credit');const supplierTotals=await page.locator('#content .stats').innerText();
+ await page.locator('[data-workspace-tab="suppliers:credit"]').click();assert.equal(await page.locator('#content .stats').innerText(),supplierTotals);
+ assert.ok((await page.locator('#content tbody tr').count())>0);
+ await page.locator('[data-workspace-tab="suppliers:debit"]').click();assert.equal(await page.locator('#content .stats').innerText(),supplierTotals);
+ await page.locator('[data-workspace-tab="suppliers:all"]').click();
+ // Legacy 45.4 kg full counts remain valid in backups and separate from current 45.5 kg.
+ const legacyBackup=await page.evaluate(()=>{const payload=backupPayload();payload.data=structuredClone(payload.data);payload.data.fullCylinderCounts.push({id:'legacy-full-count',capacity:'45.4',qty:7,date:today(),createdAt:new Date().toISOString()});return validateBackup(payload).fullCylinderCounts.find(r=>r.id==='legacy-full-count')});assert.equal(legacyBackup.capacity,'45.4');assert.equal(legacyBackup.qty,7);
+ await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  assert.deepEqual(errors,[]);
  console.log('PASS: branded printable receipts, empty-container sales and pricing, daily rates, search/converter, safe Save/Open, purchase age and existing business workflows.');
  await browser.close();

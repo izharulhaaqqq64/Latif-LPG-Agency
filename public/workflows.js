@@ -7,11 +7,11 @@ function cylinderBalance(id) {
 function ledgerEntries(id='') {
  const entries=[];
  for(const c of state.customers.filter(c=>!id||c.id===id)){
-  if(c.opening) entries.push({date:'Opening',sort:'',customer:c.id,label:'Opening balance',debit:c.opening,credit:0});
+  if(c.opening) entries.push({recordType:'Opening',recordId:c.id,date:'Opening',sort:'',customer:c.id,label:'Opening balance',debit:c.opening,credit:0});
  }
- for(const s of state.sales.filter(s=>!id||s.customer===id)) entries.push({invoiceId:s.id,date:s.date,sort:s.createdAt||s.date+'T'+String(Number(s.id)).padStart(12,'0'),customer:s.customer,label:`Invoice #${s.id} · ${s.kind} · ${s.directCash&&!s.qty?'Payment only':s.qty+' '+(s.kind==='Gas'?'kg':'pcs')}`,debit:roundAmount(total(s)),credit:s.paid});
- for(const r of state.receipts.filter(r=>!id||r.customer===id)) entries.push({receiptId:r.id,date:r.date,sort:r.createdAt||r.date+'Tzz'+r.id,customer:r.customer,label:'Collection · '+r.method,debit:0,credit:r.amount});
- for(const r of (state.creditEntries||[]).filter(r=>!id||r.customer===id))entries.push({date:r.date,sort:r.createdAt,customer:r.customer,label:'Credit entry · '+r.note,debit:r.amount,credit:0});
+ for(const s of state.sales.filter(s=>!id||s.customer===id)) entries.push({recordType:'Sale',recordId:s.id,invoiceId:s.id,date:s.date,sort:s.createdAt||s.date+'T'+String(Number(s.id)).padStart(12,'0'),customer:s.customer,label:`Invoice #${s.id} · ${s.kind} · ${s.directCash&&!s.qty?'Payment only':s.qty+' '+(s.kind==='Gas'?'kg':'pcs')}`,debit:roundAmount(total(s)),credit:s.paid});
+ for(const r of state.receipts.filter(r=>!id||r.customer===id)) entries.push({recordType:'Customer payment',recordId:r.id,receiptId:r.id,date:r.date,sort:r.createdAt||r.date+'Tzz'+r.id,customer:r.customer,label:'Credit · Collection / payment received · '+r.method,debit:0,credit:r.amount});
+ for(const r of (state.creditEntries||[]).filter(r=>!id||r.customer===id))entries.push({recordType:'Customer debit',recordId:r.id,date:r.date,sort:r.createdAt,customer:r.customer,label:'Debit · customer owes · '+(r.note||'No description'),debit:r.amount,credit:0});
  return entries.sort((a,b)=>a.sort.localeCompare(b.sort));
 }
 let paymentMode='manual';

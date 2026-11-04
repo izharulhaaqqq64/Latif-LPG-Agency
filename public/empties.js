@@ -1,6 +1,6 @@
 state.emptyCylinderOpening ??= {};
 state.emptyCylinderMovements ??= [];
-function emptySizes(){return [...EMPTY_SALE_SIZES,...['45.5','unknown'].filter(size=>state.emptyCylinderOpening[size]||state.emptyCylinderMovements.some(m=>m.capacity===size))]}
+function emptySizes(){return [...EMPTY_SALE_SIZES,...['45.4','unknown'].filter(size=>state.emptyCylinderOpening[size]||state.emptyCylinderMovements.some(m=>m.capacity===size))]}
 function emptyQuantity(size){return (state.emptyCylinderOpening[size]?.qty||0)+state.emptyCylinderMovements.filter(m=>m.capacity===size&&(!state.emptyCylinderOpening[size]?.asOf||m.createdAt>state.emptyCylinderOpening[size].asOf)).reduce((a,m)=>a+(m.direction==='In'?m.qty:-m.qty),0)}
 function emptyStockSummary(){
  const sizes=emptySizes(),complete=sizes.every(s=>state.emptyCylinderOpening[s]);
@@ -16,7 +16,7 @@ function recordCylinderMovement(row,isEmptyReturn){
  row.cylinderType ??= 'Unspecified';
  if(!['Original','Local','Unspecified'].includes(row.cylinderType))throw Error('Select a valid cylinder type.');
  if(row.direction==='Out'&&row.cylinderType==='Unspecified')throw Error('Select Original or Local for new dispatches.');
- if(row.direction==='Out'&&String(row.capacity)==='45.5')throw Error('Use 45.4 kg for new dispatches. Existing 45.5 kg cylinders can still be returned.');
+ if(row.direction==='Out'&&String(row.capacity)==='45.4')throw Error('Use 45.5 kg for new dispatches. Existing 45.4 kg cylinders can still be returned.');
  if(row.direction==='In'&&row.qty>Math.max(0,cylinderTypeBalance(row.customer,row.capacity,row.cylinderType)))throw Error('Returns exceed this customer’s outstanding quantity for this size and type.');
  if(row.direction==='Out'&&(row.fullDispatch===true||row.fullDispatch==='on'))recordFullCylinderDispatch(row);
  state.cylinders.unshift(row);

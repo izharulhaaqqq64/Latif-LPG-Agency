@@ -1,7 +1,9 @@
-const FULL_STOCK_SIZES=['11.8','15','45.4'];
+const FULL_STOCK_SIZES=['11.8','15','45.5'];
+const STORED_FULL_STOCK_SIZES=[...FULL_STOCK_SIZES,'45.4'];
 state.fullCylinderCounts ??= [];
 state.fullCylinderMovements ??= [];
-state.cylinderAlertLevels ??= {'11.8':5,'15':5,'45.4':5};
+state.cylinderAlertLevels ??= {};
+for(const size of FULL_STOCK_SIZES)state.cylinderAlertLevels[size] ??= 5;
 state.costCorrections ??= [];
 let costTarget='',profitMonth='';
 function fullCylinderStock(size){
@@ -9,12 +11,12 @@ function fullCylinderStock(size){
  return {known:Boolean(count),qty:(count?.qty||0)+movements.reduce((a,row)=>a+(row.direction==='In'?row.qty:-row.qty),0)};
 }
 function recordFullCylinderDispatch(row){
- const size=String(row.capacity);if(!FULL_STOCK_SIZES.includes(size))return;
+ const size=String(row.capacity);if(!STORED_FULL_STOCK_SIZES.includes(size))return;
  const stock=fullCylinderStock(size);if(stock.known&&row.qty>stock.qty)throw Error('Not enough full '+size+' kg cylinders. Update the physical stock count first.');
  state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'Out',qty:row.qty,date:row.date,createdAt:row.createdAt,source:row.id});
 }
 function recordPlantCylinderReceipt(receipt){
- for(const line of receipt.plantPurchase.lines){const size=String(line.capacity);if(FULL_STOCK_SIZES.includes(size)&&line.quantity)state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'In',qty:line.quantity,date:receipt.date,createdAt:receipt.createdAt,source:receipt.id})}
+ for(const line of receipt.plantPurchase.lines){const size=String(line.capacity);if(STORED_FULL_STOCK_SIZES.includes(size)&&line.quantity)state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'In',qty:line.quantity,date:receipt.date,createdAt:receipt.createdAt,source:receipt.id})}
 }
 function eventTime(row,isSale){
  if(isSale)return purchaseTimestamp(row)||Date.parse(row.date+'T00:00:00+05:00');

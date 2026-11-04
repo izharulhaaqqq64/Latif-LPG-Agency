@@ -18,7 +18,7 @@ function businessRecords(){
  add('Cylinder movement',state.cylinders,r=>`${client(r)} ${r.direction} ${r.cylinderType||'Unspecified'} ${r.qty} cylinders ${r.capacity||''} kg ${r.note||''}`);
  add('Part',state.partItems,r=>`${r.name} ${r.sku||''}`);
  add('Parts movement',state.partMovements,r=>`${state.partItems.find(p=>p.id===r.part)?.name||''} ${r.direction} ${r.qty} ${r.note||''}`);
- add('Credit entry',state.creditEntries,r=>`${client(r)} ${r.note||''}`,r=>r.amount);
+ add('Customer debit',state.creditEntries,r=>`${client(r)} ${r.note||''}`,r=>r.amount);
  add('Empty cylinder movement',state.emptyCylinderMovements,r=>`${r.direction} ${r.qty} × ${r.capacity} kg ${r.note||''}`);
  add('Full cylinder movement',state.fullCylinderMovements,r=>`${r.direction} ${r.qty} × ${r.capacity} kg ${r.note||''}`);
  add('Physical full-cylinder count',state.fullCylinderCounts,r=>`${r.qty} × ${r.capacity} kg ${r.note||''}`);
@@ -51,6 +51,20 @@ function openBusinessRecord(type,id){
 }
 document.addEventListener('input',e=>{if(e.target.id==='global-search')updateGlobalSearch();if(e.target.id==='invoice-search'){invoiceQuery=e.target.value;document.getElementById('invoice-results').innerHTML=invoiceResults()}if(e.target.id==='receipt-search'){receiptQuery=e.target.value;document.getElementById('receipt-results').innerHTML=receiptResults()}});
 document.addEventListener('click',e=>{const inv=e.target.closest('[data-sale-invoice]');if(inv){const sale=state.sales.find(s=>s.id===inv.dataset.saleInvoice);if(sale){showSaleReceipt(sale);const title='Invoice #INV-'+sale.id;document.getElementById('dialog-title').textContent=title;document.querySelector('.receipt-document-title').textContent=title;document.querySelector('dialog [data-action=print]').textContent='Print invoice / Save PDF';if(inv.dataset.invoicePrint==='true')window.print()}return}if(e.target.closest('#clear-global-search')){document.getElementById('global-search').value='';updateGlobalSearch();document.getElementById('global-search').focus()}const button=e.target.closest('[data-record-id]');if(button&&openBusinessRecord(button.dataset.recordType,button.dataset.recordId)&&button.dataset.recordPrint==='true')window.print()});
+
+function showLedgerRecord(type,id){
+ if(type==='Opening'){
+  const c=customer(id);if(!c){toast('Customer no longer exists.');return}
+  showDetail('Opening customer balance',`<p><strong>${esc(c.name)}</strong><br>Mobile: ${esc(c.phone||'Not entered')}<br>Address: ${esc(c.address||'Not entered')}</p><p>Opening debit: Rs. ${money(c.opening)}<br>Date: ${esc(c.date||'Opening balance')}</p><p>This is an opening amount owed, not a new sale or payment.</p>`);
+ }else openBusinessRecord(type,id);
+}
+document.addEventListener('click',e=>{
+ const focus=e.target.closest('#focus-global-search');if(focus){const input=document.getElementById('global-search');input.scrollIntoView({block:'center'});input.focus();return}
+ const row=e.target.closest('[data-ledger-record-id]');if(!row||e.target.closest('[data-invoice],[data-payment-receipt]'))return;
+ showLedgerRecord(row.dataset.ledgerRecordType,row.dataset.ledgerRecordId);
+});
+document.addEventListener('keydown',e=>{if(e.target.matches('tr[data-ledger-record-id]')&&['Enter',' '].includes(e.key)){e.preventDefault();showLedgerRecord(e.target.dataset.ledgerRecordType,e.target.dataset.ledgerRecordId)}});
+
 // Refresh visible search results after saves, imports and navigation.
 const renderBeforeSearch=render;
 render=function(){renderBeforeSearch();updateGlobalSearch()};
