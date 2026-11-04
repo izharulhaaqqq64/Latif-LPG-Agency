@@ -55,7 +55,7 @@ The ledger shows **Time since last purchase**, refreshing every minute. Recorded
 
 ## Total daily cash
 
-Overview and Daily sales use the same dated net cash calculation: received cash on gas/parts/customer sales plus cash debt recoveries, less cash expenses and supplier cash payments. Credit bill amounts, bank transfers and wallet payments are excluded. The breakdown also shows cash expenses and supplier cash payments separately. It is not an opening-to-closing cash balance. Inventory purchases without a recorded payment are not assumed paid.
+Overview and Daily sales use the same dated net cash calculation: received cash on gas/parts/customer sales plus cash debt recoveries, less cash operating expenses. Credit bill amounts, bank transfers and wallet payments are excluded. The breakdown shows cash operating expenses; supplier cash payments are displayed separately in the monthly report. It is not an opening-to-closing cash balance. Inventory purchases without a recorded payment are not assumed paid.
 
 New customer gas sales have an explicit payment-method selector. Older sales with no recorded payment method are counted as cash, matching the original cash-entry workflow; this assumption is shown beside the total. Existing records are not rewritten. The anonymous-entry subtotal remains separate from the total that includes all cash sales and recoveries.
 
@@ -120,7 +120,7 @@ Unpriced gas receipts, missing gas weights, unreconciled gas stock or uncosted p
 
 **Pay supplier** records later payments. Supplier balances include opening debt, purchases, initial payments and later payments; overpayments and payments before the supplier opening date are rejected. Supplier account credit is purchases/debt; debit is payments. Dates and costs respect closing locks. Historical receipts before a physical cylinder count do not add that count again.
 
-Supplier cash payments, including paid-now amounts, reduce daily and period cash movement once. Bank/wallet payments do not reduce the cash total. These payments are not operating expenses and do not reduce net profit again: profit expenses inventory only through gas/parts cost of sales. Customer debt and revenue remain unchanged by supplier purchases/payments. Supplier data and links persist in the existing browser storage and JSON backup.
+Supplier cash payments, including paid-now amounts, are excluded from Total daily cash. They appear separately in the monthly report and reduce its Cash value once. Period closing reports retain net cash after supplier payments. Bank/wallet payments do not reduce the cash total. These payments are not operating expenses and do not reduce net profit again: profit expenses inventory only through gas/parts cost of sales. Customer debt and revenue remain unchanged by supplier purchases/payments. Supplier data and links persist in the existing browser storage and JSON backup.
 
 
 ## Daily rates, inventory and receipts
@@ -149,7 +149,7 @@ Open **Receipts** in the sidebar or beside the search bar to find saved sales, c
 
 Gas inventory uses **11.8 kg, 15 kg and 45.5 kg cylinder counts**. **Add cylinders** automatically records quantity × capacity as measured gas kg and adds full-cylinder movements once. **Add kg receipt** remains available for weight-only arrivals. Physical cylinder counts remain independent of measured gas: loose-kg sales cannot identify which cylinder size was used. Existing records, including legacy 45.4 kg entries, are preserved.
 
-The headline **Total daily cash** now shows cash sales + cash collections − cash expenses − recorded supplier cash payments. Bank/wallet transactions stay outside cash; the breakdown shows each deduction. This is the day's net movement, excluding opening cash.
+The headline **Total daily cash** now shows cash sales + cash collections − cash operating expenses. Bank/wallet transactions stay outside cash; the breakdown shows each deduction. This is the day's net movement, excluding opening cash.
 
 **Daily sales** accepts payment amount, optional gas kg, optional description and Cash / Bank transfer / Easypaisa-JazzCash. Entered kg reduce Shop gas stock once; blank kg remain unmeasured. No customer name is needed for these fully paid sales. The overview daily price list shows per kg and 11.8 / 15 / 45.5 kg prices calculated from the saved dated selling rate.
 
@@ -164,7 +164,7 @@ New cylinder dispatches select **Original** or **Local** for every current size.
 
 Overview has a **Daily price list**, a **Combined search · all records** shortcut, and a persistent combined search field above the page content. Search covers customers, contacts, sales, payments, suppliers, parts, expenses, stock and cylinder movements.
 
-**Total daily cash** includes both gas and parts cash payments once. Its breakdown shows gas cash, parts/container cash, debt collections, cash expenses and supplier cash payments separately. Online bank/wallet receipts remain outside cash. Net daily cash still excludes opening cash.
+**Total daily cash** includes both gas and parts cash payments once. Its breakdown shows gas cash, parts/container cash, debt collections and cash operating expenses separately. Supplier cash payments are shown in the monthly report. Online bank/wallet receipts remain outside cash. Net daily cash still excludes opening cash.
 
 Every customer money/cylinder ledger row opens the saved entry. Click any row or its entry link, or focus the row and press Enter/Space. Opening balances, invoices, collections, direct debits and cylinder movements all have details; viewing does not change records.
 
@@ -175,3 +175,10 @@ Use **Debit · customer owes** to record a direct customer amount owed, and **Cr
 The current three standard sizes are **11.8, 15 and 45.5 kg** in daily prices, inventory, dashboard stock/alerts, empty-container sales and Original/Local customer tracking. Existing **45.4 kg** gas receipts, counts, movements and closing snapshots remain separate and are accepted by backup restore. Inventory includes a legacy stock detail when such counts/movements exist. The gas calculator can still handle historical 45.4 kg purchase examples; no old record is silently resized.
 
 App branding and the Receipts section retain the supplied flame logo, **LATIF LPG AGENCY**, **The Right Energy, Every Time**, **Palosy Road Near Shinqamar Resturent, Peshawar**, and **Cell No: 03320981963**. Select View receipt or Print receipt to print or save PDF.
+
+
+## Supplier cash and customer statement links
+
+**Total daily cash** = gas/parts cash receipts + customer cash collections − cash operating expenses. Supplier payments do not reduce this daily figure. The monthly report has a separate **Supplier cash payments** card; its **Cash** value deducts those payments exactly once. Paid-now supplier purchase amounts and later cash payments are included; bank/wallet payments are excluded. Supplier settlement remains separate from expenses and net profit. Saved monthly closings retain these amounts; older snapshots without a recorded supplier total show Not recorded rather than being recalculated.
+
+Customer names in monthly, daily and weekly statements open their clickable money/cylinder ledger. The selected customer statement heading also opens the ledger. Invoice/payment/cylinder/manual-entry links inside it open the underlying saved detail. Viewing and printing leave business records unchanged.

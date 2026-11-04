@@ -23,3 +23,5 @@
 #quick-cash-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:900px}#quick-cash-form .field{min-width:0}#quick-cash-form input,#quick-cash-form select{font-size:15px;width:100%;box-sizing:border-box}#quick-cash-form button{height:auto;min-height:46px}.global-search-panel .field{font-weight:600}.receipt-document-title{text-align:center;margin:18px 0}@media(max-width:600px){#quick-cash-form{grid-template-columns:minmax(0,1fr)}}
 
 .clickable-ledger-entry{cursor:pointer}.clickable-ledger-entry:hover{background:#f1f7ed}.clickable-ledger-entry:focus-visible{outline:2px solid #26734e;outline-offset:-2px}.ledger-entry-link{text-align:left;white-space:normal}.overview-shortcuts{justify-content:flex-start;flex-wrap:wrap}@media print{.overview-shortcuts{display:none!important}.ledger-entry-link{color:inherit;text-decoration:none}}
+
+@media print{.statement-ledger-link,.ledger-entry-link,dialog .statement-ledger-link,dialog .ledger-entry-link{display:inline!important;color:inherit;text-decoration:none}}
