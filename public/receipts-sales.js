@@ -12,7 +12,7 @@ document.addEventListener('click',e=>{
  const payment=e.target.closest('[data-payment-receipt]');if(!payment)return;const row=state.receipts.find(r=>r.id===payment.dataset.paymentReceipt);if(!row)return;
  receiptPreview('Payment receipt',`<p>Receipt: ${esc(row.id)}<br>Date: ${esc(row.date)}<br>Customer: ${esc(customer(row.customer)?.name||'')}</p><hr><div class="receipt-line"><span>Amount received</span><strong>Rs. ${money(row.amount)}</strong></div><p>Method: ${esc(row.method)}<br>Reference: ${esc(row.reference||row.note||'')}</p>`);
 });
-const EMPTY_SALE_SIZES=['11.8','15','45.5'];
+const EMPTY_SALE_SIZES=['11.8','15','45'];
 let soldCylinderDate=today();
 function soldCylindersPage(){
  const rows=state.sales.filter(s=>s.cylinderSale?.type==='empty'&&s.date===soldCylinderDate);

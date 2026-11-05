@@ -5,6 +5,8 @@ descriptions.Receipts='Find saved sales and payments, view receipts and print or
 function businessRecords(){
  const records=[];
  const add=(type,rows,describe,amount)=>rows.forEach(row=>records.push({type,id:row.id,date:row.date||'',row,text:describe(row),amount:amount?amount(row):null}));
+ add('Security deposit',state.cylinderSecurities,r=>`Invoice ${r.invoice} ${r.name||'Receipt bearer'} ${r.phone||''} ${r.qty} × ${r.capacity} kg ${r.variant} ${r.method}`,r=>r.amount);
+ add('Security refund',state.securityRefunds,r=>`Deposit ${r.deposit} ${r.qty} cylinders returned ${r.method} ${r.note||''}`,r=>r.amount);
  const client=r=>customer(r.customer)?.name||'Cash customer';
  const supplier=r=>state.suppliers.find(s=>s.id===r.supplier)?.name||'';
  add('Sale',state.sales,r=>`${client(r)} ${r.item||'LPG gas'} ${r.kind} ${r.channel} ${r.description||''} ${r.method||'Cash'} ${r.filledCylinderSale?.capacity||r.cylinderSale?.capacity||''}`,total);
@@ -30,7 +32,7 @@ function businessRecords(){
  add('Monthly closing',Object.entries(state.monthClosings).map(([id,r])=>({id,date:id+'-01',report:r.report})),r=>`Saved monthly closing ${r.id}`);
  return records.sort((a,b)=>b.date.localeCompare(a.date));
 }
-const receiptTypes=['Sale','Customer payment','Gas receipt','Supplier purchase','Supplier payment'];
+const receiptTypes=['Security deposit','Security refund','Sale','Customer payment','Gas receipt','Supplier purchase','Supplier payment'];
 function matchingRecords(records,value){const words=value.toLowerCase().trim().split(/\s+/).filter(Boolean);return records.filter(r=>words.every(w=>`${r.type} ${r.id} INV-${r.id} ${r.date} ${r.text} ${r.amount??''}`.toLowerCase().includes(w)))}
 function recordButtons(r,print=false){return `${EDIT_TYPES[r.type]?recordActions(r.type,r.id):''}<button type="button" class="card-link" data-record-type="${esc(r.type)}" data-record-id="${esc(r.id)}">${receiptTypes.includes(r.type)?'View receipt':'Open'}</button>${print?` <button type="button" class="card-link" data-record-type="${esc(r.type)}" data-record-id="${esc(r.id)}" data-record-print="true">Print receipt</button>`:''}`}
 function recordsTable(rows,print=false){return table(['DATE','TYPE / REFERENCE','DETAILS','AMOUNT',''],rows.map(r=>`<tr><td>${esc(r.date||'—')}</td><td>${esc(r.type)}<small>${esc(r.id)}</small></td><td>${esc(r.text)}</td><td>${Number.isFinite(r.amount)?'Rs. '+money(r.amount):'—'}</td><td>${recordButtons(r,print)}</td></tr>`))}
@@ -45,7 +47,9 @@ section=function(){return page==='Invoices'?invoicesPage():page==='Receipts'?rec
 function updateGlobalSearch(){const value=document.getElementById('global-search').value,box=document.getElementById('global-search-results');box.hidden=!value.trim();if(box.hidden){box.innerHTML='';return}const rows=matchingRecords(businessRecords(),value);box.innerHTML=`<p role="status">${rows.length} matching records${rows.length>80?' · Showing first 80; refine your search':''}</p>`+recordsTable(rows.slice(0,80))}
 function openBusinessRecord(type,id){
  const record=businessRecords().find(r=>r.type===type&&r.id===id);if(!record){toast('Record no longer exists.');return false}
- if(type==='Sale')showSaleReceipt(record.row);
+ if(type==='Security deposit')showSaleReceipt(state.sales.find(s=>s.id===record.row.invoice));
+ else if(type==='Security refund'){const r=record.row,d=state.cylinderSecurities.find(d=>d.id===r.deposit);receiptPreview('Cylinder security refund',`<p>Date: ${esc(r.date)}<br>Refund reference: ${esc(r.id)}<br>Original sale: ${esc(d.invoice)}<br>${r.qty} × ${esc(d.capacity)} kg ${esc(d.variant)} empty cylinders returned<br>Refund paid: Rs. ${money(r.amount)}<br>Method: ${esc(r.method)}<br>${esc(r.note||'')}</p>`)}
+ else if(type==='Sale')showSaleReceipt(record.row);
  else if(type==='Supplier purchase'||type==='Supplier payment')showSupplierReceipt(type==='Supplier purchase'?'purchase':'payment',id);
  else if(type==='Customer payment'||type==='Gas receipt'){
   const button=document.createElement('button');button.hidden=true;button.setAttribute(type==='Customer payment'?'data-payment-receipt':'data-open-gas-receipt',id);document.body.appendChild(button);button.click();button.remove();

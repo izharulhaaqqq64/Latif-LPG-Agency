@@ -1,22 +1,27 @@
-const FULL_STOCK_SIZES=['11.8','15','45.5'];
-const STORED_FULL_STOCK_SIZES=[...FULL_STOCK_SIZES,'45.4'];
+const FULL_STOCK_SIZES=['11.8','15','45'];
+const STORED_FULL_STOCK_SIZES=[...FULL_STOCK_SIZES,'45.4','45.5'];
 state.fullCylinderCounts ??= [];
 state.fullCylinderMovements ??= [];
 state.cylinderAlertLevels ??= {};
 for(const size of FULL_STOCK_SIZES)state.cylinderAlertLevels[size] ??= 5;
 state.costCorrections ??= [];
 let costTarget='',profitMonth='';
-function fullCylinderStock(size){
- const count=state.fullCylinderCounts.filter(row=>row.capacity===size).at(-1),movements=state.fullCylinderMovements.filter(row=>row.capacity===size&&(!count||row.createdAt>count.createdAt&&(!count.date||row.date>=count.date)));
- return {known:Boolean(count),qty:(count?.qty||0)+movements.reduce((a,row)=>a+(row.direction==='In'?row.qty:-row.qty),0)};
+function fullCylinderStock(size,variant=null){
+ const counts=state.fullCylinderCounts.filter(c=>c.capacity===size),moves=state.fullCylinderMovements.filter(c=>c.capacity===size);
+ const calc=v=>{const count=counts.filter(c=>(c.variant||null)===v).at(-1),mm=moves.filter(m=>(!v||m.variant===v)&&(!count||m.createdAt>count.createdAt&&(!count.date||m.date>=count.date)));return {known:Boolean(count),qty:(count?.qty||0)+mm.reduce((a,m)=>a+(m.direction==='In'?m.qty:-m.qty),0),stamp:count?.createdAt||''}};
+ if(variant){const typed=calc(variant),aggregate=calc(null);if(aggregate.stamp>typed.stamp)typed.known=false;return typed;}
+ const aggregate=calc(null),original=calc('Original'),local=calc('Local');
+ if(original.known&&local.known&&original.stamp>=aggregate.stamp&&local.stamp>=aggregate.stamp&&!moves.some(m=>!['Original','Local'].includes(m.variant)&&m.createdAt>(original.stamp<local.stamp?original.stamp:local.stamp)))return {known:true,qty:original.qty+local.qty};
+ if((original.known&&original.stamp>aggregate.stamp)||(local.known&&local.stamp>aggregate.stamp))aggregate.known=false;
+ return aggregate;
 }
 function recordFullCylinderDispatch(row){
  const size=String(row.capacity);if(!STORED_FULL_STOCK_SIZES.includes(size))return;
- const stock=fullCylinderStock(size);if(stock.known&&row.qty>stock.qty)throw Error('Not enough full '+size+' kg cylinders. Update the physical stock count first.');
- state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'Out',qty:row.qty,date:row.date,createdAt:row.createdAt,source:row.id});
+ const stock=fullCylinderStock(size),typed=fullCylinderStock(size,row.cylinderType);if(typed.known&&row.qty>typed.qty)throw Error('Not enough full '+row.cylinderType+' cylinders.');if(stock.known&&row.qty>stock.qty)throw Error('Not enough full '+size+' kg cylinders. Update the physical stock count first.');
+ state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'Out',qty:row.qty,date:row.date,createdAt:row.createdAt,source:row.id,variant:row.cylinderType});
 }
 function recordPlantCylinderReceipt(receipt){
- for(const line of receipt.plantPurchase.lines){const size=String(line.capacity);if(STORED_FULL_STOCK_SIZES.includes(size)&&line.quantity)state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'In',qty:line.quantity,date:receipt.date,createdAt:receipt.createdAt,source:receipt.id})}
+ for(const line of receipt.plantPurchase.lines){const size=String(line.capacity);if(STORED_FULL_STOCK_SIZES.includes(size)&&line.quantity)state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'In',qty:line.quantity,date:receipt.date,createdAt:receipt.createdAt,source:receipt.id,variant:receipt.variant})}
 }
 function eventTime(row,isSale){
  if(isSale)return purchaseTimestamp(row)||Date.parse(row.date+'T00:00:00+05:00');
@@ -55,7 +60,7 @@ monthlyValueCards=function(report){
 function openStockProfitForm(kind){
  action=kind;let html='',title='';
  if(kind==='filled-stock'){
-  title='Full-cylinder stock';html=select('Cylinder size','capacity',STORED_FULL_STOCK_SIZES.map(size=>[size,size+' kg']))+select('Action','mode',[['Count','Set current physical count'],['In','Receive full cylinders'],['Out','Issue full cylinders']])+field('Cylinder quantity','qty','number','','min="0" step="1"')+field('Reference / note','note','text','Physical stock update','maxlength="150"')+'<p class="card-subtitle">A physical count includes all receipts and dispatches up to now; only later movements change it. This updates cylinder counts, not gas kg, cash or customer balances. Plant receipts and marked-full customer dispatches already update counts—do not enter them twice.</p>';
+  title='Full-cylinder stock';html=editSelect('Variant / count scope','variant',[['','All variants / legacy'],['Original','Original'],['Local','Local']],'')+select('Cylinder size','capacity',STORED_FULL_STOCK_SIZES.map(size=>[size,size+' kg']))+select('Action','mode',[['Count','Set current physical count'],['In','Receive full cylinders'],['Out','Issue full cylinders']])+field('Cylinder quantity','qty','number','','min="0" step="1"')+field('Reference / note','note','text','Physical stock update','maxlength="150"')+'<p class="card-subtitle">A physical count includes all receipts and dispatches up to now; only later movements change it. This updates cylinder counts, not gas kg, cash or customer balances. Plant receipts and marked-full customer dispatches already update counts—do not enter them twice.</p>';
  }
  if(kind==='gas-cost'){
   const rows=state.stock;if(!rows.length){toast('Record a gas arrival first.');return}
@@ -71,8 +76,8 @@ function submitStockProfitForm(e){
  const before=structuredClone(state),f=Object.fromEntries(new FormData(e.target));
  try{
   if(action==='filled-stock'){
-   assertDateOpen(today());const size=f.capacity,qty=Number(f.qty),stock=fullCylinderStock(size);if(!STORED_FULL_STOCK_SIZES.includes(size)||!Number.isSafeInteger(qty)||qty<0||f.mode!=='Count'&&qty===0)throw Error('Enter a valid cylinder size and whole quantity.');
-   const row={id:crypto.randomUUID(),capacity:size,qty,date:today(),createdAt:new Date().toISOString(),note:f.note.trim()};
+   assertDateOpen(today());const size=f.capacity,qty=Number(f.qty),stock=fullCylinderStock(size,f.variant||null);if(!STORED_FULL_STOCK_SIZES.includes(size)||!Number.isSafeInteger(qty)||qty<0||f.mode!=='Count'&&qty===0)throw Error('Enter a valid cylinder size and whole quantity.');
+   const row={id:crypto.randomUUID(),capacity:size,qty,date:today(),createdAt:new Date().toISOString(),note:f.note.trim(),...(f.variant?{variant:f.variant}:{})};
    if(f.mode==='Count')state.fullCylinderCounts.push(row);else{if(!['In','Out'].includes(f.mode))throw Error('Select a stock action.');if(f.mode==='Out'&&(!stock.known||qty>stock.qty))throw Error('Set a physical stock count and do not exceed available cylinders.');state.fullCylinderMovements.push({...row,direction:f.mode})}
   }else if(action==='gas-cost'){
    const receipt=state.stock.find(r=>r.id===f.stockId),cost=Number(f.purchaseCost);if(!receipt)throw Error('Select a receipt.');assertDateOpen(receipt.date);if(!Number.isFinite(cost)||cost<0)throw Error('Enter a valid purchase cost.');state.costCorrections.push({kind:'gas',id:receipt.id,old:receipt.purchaseCost??null,cost,createdAt:new Date().toISOString()});receipt.purchaseCost=cost;
