@@ -245,3 +245,16 @@ Recognized automatic residual appears in inventory and daily/weekly/monthly repo
 There are exactly **3 owner slots, 1 manager and 1 driver**. All owners have full access to records, accounts and server recovery backups. The first owner activates the other four slots with individual names/usernames/passwords in **Account & backups → Manage 5 logins**. Disabled slots cannot sign in and have no default password. The manager handles business records; the driver has a separate delivery/cylinder view without prices, debt or financial APIs.
 
 Use **Save name** in Account & backups to edit your owner/account name. **Save**, **Open** (backup preview) and **Exit** (sign out) are available in the main file controls. Existing browser and server data, including the previous owner password, are preserved on upgrade.
+
+
+## Walk-in full gas cylinders and spare parts
+
+**Sales → Daily sales** has **Gas by KG**, **Full gas cylinders** and **Spare parts** options. Each uses the selected sale date, with no required customer name. Cash, Bank transfer and Easypaisa-JazzCash payments and optional descriptions/references are supported.
+
+For full gas cylinders choose **11.8, 15 or 45.4 kg** (existing 45.5 kg is also supported), quantity and price per cylinder. The default price is the dated daily per-KG rate × capacity and can be changed for the customer. Bill = quantity × cylinder price; gas sold = quantity × capacity. One save decreases Shop gas and the corresponding full-cylinder count, when counted. Gas KG and known physical counts prevent over-issuing. These are sales of full gas contents; empty-shell sales and customer-loaned cylinders remain separate. No automatic retail residual is applied. Physical 45.4 kg stock can be counted through Update cylinder counts without combining it with 45.5 kg.
+
+Spare parts use the same part records, prices, stock movements and weighted-average purchase costs as **Gas parts**. Saving creates one sale and one linked stock deduction, not duplicate transactions. A sale made in either Gas parts or Daily sales appears in the daily walk-in list once. Missing/insufficient part stock prevents saving.
+
+The daily list now includes per-KG, full-cylinder and anonymous parts/container sales. Received totals use saved payments. **Total gas sold** at the bottom sums known KG from all gas sales on the selected date, including customer/wholesale invoices. It excludes spare parts, empty containers, residual loss and unmeasured payment-only entries; a separate note shows the walk-in subtotal.
+
+Full-cylinder and parts sales support linked edit/delete, dated records, receipts, private synchronization and recovery backups. Changing/deleting a full-cylinder sale updates its full count and gas KG together; parts changes update their stock/costs. Closed-period and dependent-stock checks still apply.

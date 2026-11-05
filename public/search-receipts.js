@@ -7,7 +7,7 @@ function businessRecords(){
  const add=(type,rows,describe,amount)=>rows.forEach(row=>records.push({type,id:row.id,date:row.date||'',row,text:describe(row),amount:amount?amount(row):null}));
  const client=r=>customer(r.customer)?.name||'Cash customer';
  const supplier=r=>state.suppliers.find(s=>s.id===r.supplier)?.name||'';
- add('Sale',state.sales,r=>`${client(r)} ${r.item||'LPG gas'} ${r.kind} ${r.channel} ${r.description||''} ${r.method||'Cash'} ${r.cylinderSale?.capacity||''}`,total);
+ add('Sale',state.sales,r=>`${client(r)} ${r.item||'LPG gas'} ${r.kind} ${r.channel} ${r.description||''} ${r.method||'Cash'} ${r.filledCylinderSale?.capacity||r.cylinderSale?.capacity||''}`,total);
  add('Customer payment',state.receipts,r=>`${client(r)} ${r.method} ${r.note||''}`,r=>r.amount);
  add('Gas receipt',state.stock,r=>`${r.warehouse} ${r.qty} kg ${r.note||''} ${(r.plantPurchase?.lines||[]).map(l=>l.capacity+' kg').join(' ')}`,r=>r.purchaseCost);
  add('Supplier purchase',state.supplierPurchases,r=>`${supplier(r)} ${r.kind} ${r.reference||''} ${r.capacity||''}`,r=>r.total);

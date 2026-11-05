@@ -8,6 +8,7 @@ function recordLabel(type,r){return [r.date||r.id,r.name||customer(r.customer)?.
 function sourceRecord(type,id){
  const r=editorRecord(type,id);if(!r)throw Error('This record no longer exists.');
  if((type==='Gas receipt'||type==='Parts movement')&&r.supplierPurchase)return sourceRecord('Supplier purchase',r.supplierPurchase);
+ if(type==='Full movement'&&r.invoice)return sourceRecord('Sale',r.invoice);
  if(type==='Parts movement'&&r.invoice)return sourceRecord('Sale',r.invoice);
  if(type==='Cylinder movement'&&r.invoice)return sourceRecord('Sale',r.invoice);
  if(type==='Empty movement'&&r.invoice)return sourceRecord('Sale',r.invoice);

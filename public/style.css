@@ -38,3 +38,5 @@
 .residual-policy{border:1px solid #d7e5d2;border-radius:10px;margin:18px 0;padding:16px}.residual-policy legend{font-weight:600}.residual-batches{padding:18px;margin-top:20px}.sale-gas-preview{padding:12px;background:#edf7e9;border-radius:8px;color:#176b4a;font-weight:600}
 
 #profile-owner-name{display:block;max-width:145px;overflow-wrap:anywhere}.profile>div{min-width:0}.auth-card article{border-bottom:1px solid #dce6d8;padding:12px 0}
+
+#walkin-sale-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:900px}#walkin-sale-form .field{min-width:0}#walkin-sale-form input,#walkin-sale-form select{width:100%;font-size:15px;box-sizing:border-box}.daily-gas-totals{margin-top:20px}.daily-gas-totals .cash-day-total small{display:block;max-width:480px;line-height:1.6;margin-top:6px}@media(max-width:600px){#walkin-sale-form{grid-template-columns:minmax(0,1fr)}.daily-gas-totals .cash-day-total{flex-wrap:wrap;gap:14px}}

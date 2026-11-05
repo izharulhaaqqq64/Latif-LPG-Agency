@@ -68,3 +68,6 @@ Version 2.1 also synchronizes cash/online transfers, payment references and meas
 Version 2.2 adds per-customer sale price overrides, one-button calculate/save, five login slots, and batch-based automatic residual accounting limited to retail per-KG sales. See README for its FIFO and reporting rules.
 
 Login names/password hashes are held in the server database, not in business JSON exports. Preserve the full server data directory when moving an existing installation to retain all five logins; importing a business JSON backup into a new server requires setting up that server's logins separately.
+
+
+Version 2.3 includes walk-in full-gas-cylinder and spare-parts entry in Daily sales, with shared inventory links and dated total gas sold. Existing accounts and database files remain compatible.

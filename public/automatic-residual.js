@@ -5,7 +5,7 @@ function residualBatchInfo(receipt){
  const count=receipt.plantPurchase?receipt.plantPurchase.lines.reduce((a,l)=>a+Number(l.quantity||0),0):Number(p.cylinderCount||0),gross=Math.round(receipt.qty*1000),reserve=Math.round(count*p.gramsPerCylinder);
  return {count,gross,reserve,usable:gross-reserve};
 }
-function isRetailKgSale(s,data=state){if(s.kind!=='Gas'||s.channel!=='Retail'||s.saleBasis==='Full cylinder')return false;if(s.saleBasis==='Per KG')return true;return !(s.cylOut>0&&(s.fullDispatch===true||s.fullDispatch==='on'))&&!(data.cylinders||[]).some(c=>c.invoice===s.id&&(c.fullDispatch===true||c.fullDispatch==='on'));}
+function isRetailKgSale(s,data=state){if(s.kind!=='Gas'||s.channel!=='Retail'||s.saleBasis==='Full cylinder'||s.filledCylinderSale)return false;if(s.saleBasis==='Per KG')return true;return !(s.cylOut>0&&(s.fullDispatch===true||s.fullDispatch==='on'))&&!(data.cylinders||[]).some(c=>c.invoice===s.id&&(c.fullDispatch===true||c.fullDispatch==='on'));}
 function automaticResidual(data=state){
  if(!data.stock.some(r=>r.residualPolicy?.enabled))return {losses:[],batches:[],shortages:[]};
  const signature=JSON.stringify([data.stock.map(r=>[r.id,r.qty,r.date,r.createdAt,r.warehouse,r.plantPurchase?.lines,r.residualPolicy]),data.sales.filter(s=>s.kind==='Gas').map(s=>[s.id,s.qty,s.date,s.createdAt,s.time,s.channel,s.saleBasis,s.cylOut,s.fullDispatch]),(data.gasLosses||[]).map(l=>[l.id,l.qty,l.date,l.createdAt,l.warehouse]),(data.cylinders||[]).map(c=>[c.invoice,c.fullDispatch])]);
