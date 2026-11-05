@@ -8,6 +8,7 @@ function businessRecords(){
  add('Security deposit',state.cylinderSecurities,r=>`Invoice ${r.invoice} ${r.name||'Receipt bearer'} ${r.phone||''} ${r.qty} × ${r.capacity} kg ${r.variant} ${r.method}`,r=>r.amount);
  add('Security refund',state.securityRefunds,r=>`Deposit ${r.deposit} ${r.qty} cylinders returned ${r.method} ${r.note||''}`,r=>r.amount);
  add('Gas stock correction',state.gasAdjustments,r=>`${r.qty} kg ${r.capacity} kg cylinders ${r.warehouse}`,r=>null);
+ add('Cylinder location',state.cylinderAllocations||[],r=>`${r.qty} × ${r.capacity} kg ${r.from} → ${r.to} ${r.note||''}`);
  const client=r=>customer(r.customer)?.name||'Cash customer';
  const supplier=r=>state.suppliers.find(s=>s.id===r.supplier)?.name||'';
  add('Sale',state.sales,r=>`${client(r)} ${r.item||'LPG gas'} ${r.kind} ${r.channel} ${r.description||''} ${r.method||'Cash'} ${r.filledCylinderSale?.capacity||r.cylinderSale?.capacity||''}`,total);

@@ -6,22 +6,22 @@ state.cylinderAlertLevels ??= {};
 for(const size of FULL_STOCK_SIZES)state.cylinderAlertLevels[size] ??= 5;
 state.costCorrections ??= [];
 let costTarget='',profitMonth='';
-function fullCylinderStock(size,variant=null){
- const counts=state.fullCylinderCounts.filter(c=>c.capacity===size&&!c.migrationArchived),moves=state.fullCylinderMovements.filter(c=>c.capacity===size);
- const calc=v=>{const count=counts.filter(c=>(c.variant||null)===v).at(-1),mm=moves.filter(m=>(!v||m.variant===v)&&(!count||m.createdAt>count.createdAt&&(!count.date||m.date>=count.date)));return {known:Boolean(count)&&!count.estimated,qty:(count?.qty||0)-(count?.stockDeficit||0)+mm.reduce((a,m)=>a+(m.direction==='In'?m.qty:-m.qty),0),stamp:count?.createdAt||''}};
+function fullCylinderStock(size,variant=null,data=state){
+ const counts=data.fullCylinderCounts.filter(c=>c.capacity===size&&!c.migrationArchived),moves=data.fullCylinderMovements.filter(c=>c.capacity===size);
+ const calc=v=>{const count=counts.filter(c=>(c.variant||null)===v).at(-1),mm=moves.filter(m=>(!v||m.variant===v)&&(!count||m.createdAt>count.createdAt&&(!count.date||m.date>=count.date)));return {known:Boolean(count)&&!count.estimated,recorded:Boolean(count)||mm.length>0,qty:(count?.qty||0)-(count?.stockDeficit||0)+mm.reduce((a,m)=>a+(m.direction==='In'?m.qty:-m.qty),0),stamp:count?.createdAt||''}};
  if(variant){const typed=calc(variant),aggregate=calc(null);if(aggregate.stamp>typed.stamp)typed.known=false;return typed;}
  const aggregate=calc(null),original=calc('Original'),local=calc('Local');
- if(original.known&&local.known&&original.stamp>=aggregate.stamp&&local.stamp>=aggregate.stamp&&!moves.some(m=>!['Original','Local'].includes(m.variant)&&m.createdAt>(original.stamp<local.stamp?original.stamp:local.stamp)))return {known:true,qty:original.qty+local.qty};
+ if(original.known&&local.known&&original.stamp>=aggregate.stamp&&local.stamp>=aggregate.stamp&&!moves.some(m=>!['Original','Local'].includes(m.variant)&&m.createdAt>(original.stamp<local.stamp?original.stamp:local.stamp)))return {known:true,recorded:true,qty:original.qty+local.qty};
  if((original.known&&original.stamp>aggregate.stamp)||(local.known&&local.stamp>aggregate.stamp))aggregate.known=false;
  return aggregate;
 }
 function recordFullCylinderDispatch(row){
  const size=String(row.capacity);if(!STORED_FULL_STOCK_SIZES.includes(size))return;
  const stock=fullCylinderStock(size),typed=fullCylinderStock(size,row.cylinderType);if(typed.known&&row.qty>typed.qty)throw Error('Not enough full '+row.cylinderType+' cylinders.');if(stock.known&&row.qty>stock.qty)throw Error('Not enough full '+size+' kg cylinders. Update the physical stock count first.');
- state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'Out',qty:row.qty,date:row.date,createdAt:row.createdAt,source:row.id,variant:row.cylinderType});
+ state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'Out',qty:row.qty,date:row.date,createdAt:row.createdAt,source:row.id,variant:row.cylinderType,warehouse:row.warehouse});
 }
 function recordPlantCylinderReceipt(receipt){
- for(const line of receipt.plantPurchase.lines){const size=String(line.capacity);if(STORED_FULL_STOCK_SIZES.includes(size)&&line.quantity)state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'In',qty:line.quantity,date:receipt.date,createdAt:receipt.createdAt,source:receipt.id,variant:receipt.variant})}
+ for(const line of receipt.plantPurchase.lines){const size=String(line.capacity);if(STORED_FULL_STOCK_SIZES.includes(size)&&line.quantity)state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'In',qty:line.quantity,date:receipt.date,createdAt:receipt.createdAt,source:receipt.id,variant:receipt.variant,warehouse:receipt.warehouse})}
 }
 function eventTime(row,isSale){
  if(isSale)return purchaseTimestamp(row)||Date.parse(row.date+'T00:00:00+05:00');

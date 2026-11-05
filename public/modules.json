@@ -25,5 +25,6 @@
   "easy-workspace.js",
   "simple-accounts-stock.js",
   "search-receipts.js",
-  "overview-polish.js"
+  "overview-polish.js",
+  "location-stock.js"
 ]
