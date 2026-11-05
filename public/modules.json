@@ -3,6 +3,7 @@
   "workflows.js",
   "trading.js",
   "closing.js",
+  "cylinder-standard.js",
   "capacities.js",
   "plant.js",
   "management.js",
@@ -20,5 +21,6 @@
   "automatic-residual.js",
   "walkin-sales.js",
   "cylinder-security.js",
+  "easy-workspace.js",
   "search-receipts.js"
 ]

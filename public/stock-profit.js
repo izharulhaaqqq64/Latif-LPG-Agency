@@ -1,5 +1,5 @@
-const FULL_STOCK_SIZES=['11.8','15','45'];
-const STORED_FULL_STOCK_SIZES=[...FULL_STOCK_SIZES,'45.4','45.5'];
+const FULL_STOCK_SIZES=['11.8','15','45.4'];
+const STORED_FULL_STOCK_SIZES=[...FULL_STOCK_SIZES];
 state.fullCylinderCounts ??= [];
 state.fullCylinderMovements ??= [];
 state.cylinderAlertLevels ??= {};
@@ -7,8 +7,8 @@ for(const size of FULL_STOCK_SIZES)state.cylinderAlertLevels[size] ??= 5;
 state.costCorrections ??= [];
 let costTarget='',profitMonth='';
 function fullCylinderStock(size,variant=null){
- const counts=state.fullCylinderCounts.filter(c=>c.capacity===size),moves=state.fullCylinderMovements.filter(c=>c.capacity===size);
- const calc=v=>{const count=counts.filter(c=>(c.variant||null)===v).at(-1),mm=moves.filter(m=>(!v||m.variant===v)&&(!count||m.createdAt>count.createdAt&&(!count.date||m.date>=count.date)));return {known:Boolean(count),qty:(count?.qty||0)+mm.reduce((a,m)=>a+(m.direction==='In'?m.qty:-m.qty),0),stamp:count?.createdAt||''}};
+ const counts=state.fullCylinderCounts.filter(c=>c.capacity===size&&!c.migrationArchived),moves=state.fullCylinderMovements.filter(c=>c.capacity===size);
+ const calc=v=>{const count=counts.filter(c=>(c.variant||null)===v).at(-1),mm=moves.filter(m=>(!v||m.variant===v)&&(!count||m.createdAt>count.createdAt&&(!count.date||m.date>=count.date)));return {known:Boolean(count)&&!count.estimated,qty:(count?.qty||0)-(count?.stockDeficit||0)+mm.reduce((a,m)=>a+(m.direction==='In'?m.qty:-m.qty),0),stamp:count?.createdAt||''}};
  if(variant){const typed=calc(variant),aggregate=calc(null);if(aggregate.stamp>typed.stamp)typed.known=false;return typed;}
  const aggregate=calc(null),original=calc('Original'),local=calc('Local');
  if(original.known&&local.known&&original.stamp>=aggregate.stamp&&local.stamp>=aggregate.stamp&&!moves.some(m=>!['Original','Local'].includes(m.variant)&&m.createdAt>(original.stamp<local.stamp?original.stamp:local.stamp)))return {known:true,qty:original.qty+local.qty};

@@ -6,7 +6,7 @@ function calculatePlantPurchase(rows,unitRate){
  if(!Number.isFinite(rate)||rate<0)throw Error('The price per unit must be zero or greater.');
  if(!rows.length)throw Error('Add at least one cylinder size.');
  const lines=rows.map(row=>{
-  const capacity=Number(row.capacity),quantity=Number(row.quantity||0);
+  const capacity=Number(row.capacity),quantity=Number(row.quantity||0);if(['45','45.5'].includes(String(capacity)))throw Error('Use the 45.4 kg cylinder size.');
   if(!Number.isFinite(capacity)||capacity<=0||Math.abs(capacity*100-Math.round(capacity*100))>1e-7)throw Error('Enter a positive capacity with up to two decimal places.');
   if(!Number.isSafeInteger(quantity)||quantity<0)throw Error('Cylinder quantity must be a non-negative whole number.');
   const kg=(Math.round(capacity*100)*quantity)/100;
@@ -17,6 +17,8 @@ function calculatePlantPurchase(rows,unitRate){
  if(!Number.isFinite(totalCost))throw Error('The total is too large.');
  return {lines,quantity:lines.reduce((a,line)=>a+line.quantity,0),kg,units,unitRate:rate,costPerKg:rate/GAS_UNIT_KG,totalCost};
 }
+// Editing a note/cost must not reinterpret the measured KG on a migrated receipt.
+function historicalPlantPurchase(previous,rows,unitRate){const result=calculatePlantPurchase(rows,unitRate),rate=Number(unitRate||0);for(const [i,line] of result.lines.entries()){const old=previous?.lines[i];if(old?.recordedCapacity!=null&&String(old.capacity)===String(line.capacity)&&old.quantity===line.quantity){line.recordedCapacity=old.recordedCapacity;line.kg=Number.isFinite(old.kg)?old.kg:old.quantity*Number(old.recordedCapacity);line.units=line.kg/GAS_UNIT_KG;line.amount=roundAmount(line.units*rate)}}result.kg=roundAmount(result.lines.reduce((a,l)=>a+l.kg,0));result.units=result.kg/GAS_UNIT_KG;result.totalCost=roundAmount(result.units*rate);result.costPerKg=rate/GAS_UNIT_KG;return result;}
 function plantResults(){
  try{
   const p=calculatePlantPurchase(plantRows,plantRate);

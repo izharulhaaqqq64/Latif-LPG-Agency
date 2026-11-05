@@ -67,7 +67,7 @@
    else remote=await chooseRecovery(remote);
   }
   if(!remote.data)remote=await firstData(remote);
-  remember(remote);writeCached(remote.data);window.lpgInitialData=remote.data;window.lpgSync={save:saveShared,refresh:()=>refresh(true)};
+  remember(remote);writeCached(remote.data);window.lpgInitialData=remote.data;window.lpgSync={save:saveShared,refresh:()=>refresh(true),reset:async(password,confirmation)=>{if(pending||inflight||blocked||remoteWaiting)throw Error('Wait for sync and refresh newer records before resetting.');const result=await api('/api/reset',{method:'POST',body:JSON.stringify({password,confirmation,instance,revision})});applyRemote(result)}};
   const modules=await api('/modules.json');for(const src of modules){await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=()=>reject(Error('Could not load '+src));document.head.appendChild(script)})}
   state=validateBackup(state);panel.innerHTML='';document.body.classList.remove('app-loading');message('Synced with private server');document.getElementById('profile-owner-name').textContent=window.lpgName||window.lpgOwner;document.getElementById('profile-role').textContent=window.lpgRole||'Owner';
   document.getElementById('sync-refresh').onclick=()=>refresh(true);document.getElementById('owner-account').onclick=account;
