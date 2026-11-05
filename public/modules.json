@@ -27,5 +27,6 @@
   "search-receipts.js",
   "overview-polish.js",
   "location-stock.js",
-  "business-polish.js"
+  "business-polish.js",
+  "dashboard-layout.js"
 ]

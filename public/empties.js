@@ -19,7 +19,7 @@ function recordCylinderMovement(row,isEmptyReturn){
  if(row.direction==='In'&&row.qty>Math.max(0,cylinderTypeBalance(row.customer,row.capacity,row.cylinderType)))throw Error('Returns exceed this customer’s outstanding quantity for this size and type.');
  if(row.direction==='Out'&&(row.fullDispatch===true||row.fullDispatch==='on'))recordFullCylinderDispatch(row);
  state.cylinders.unshift(row);
- if(row.direction==='In'&&isEmptyReturn)state.emptyCylinderMovements.push({id:crypto.randomUUID(),date:row.date,createdAt:row.createdAt,capacity:capacityKey(row.capacity),direction:'In',qty:row.qty,note:'Empty customer return · '+(row.note||''),cylinderMovement:row.id});
+ if(row.direction==='In'&&isEmptyReturn)state.emptyCylinderMovements.push({id:crypto.randomUUID(),date:row.date,createdAt:row.createdAt,capacity:capacityKey(row.capacity),direction:'In',qty:row.qty,note:'Empty customer return · '+(row.note||''),cylinderMovement:row.id,warehouse:row.warehouse});
 }
 function openEmptyForm(kind){
  action=kind;const opening=kind==='empty-opening',tareOnly=kind==='empty-tare',sizes=opening?emptySizes().filter(size=>!state.emptyCylinderOpening[size]):tareOnly?emptySizes().filter(size=>state.emptyCylinderOpening[size]):emptySizes();

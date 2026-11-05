@@ -322,3 +322,12 @@ Old physical counts or movements without a recorded location appear under **Unas
 ### Supplier list cleanup (2.9.1)
 
 The supplier page now shows one supplier summary list. Click a supplier name or choose the supplier to open its single transaction history; All suppliers returns to the summary. Credit/Debit quick actions stay beside each supplier on the list, while the selected statement retains purchase/payment actions, filters, receipts and Edit/Delete. This removes the repeated-looking summary/history layout without changing or deleting any payments.
+
+
+## Dashboard and daily payment workspace (2.10)
+
+The former Overview is now labelled **Dashboard**. The duplicate overview banner is removed. Daily prices appear first, followed by the sales/revenue/stock cards. This group includes a single **Total daily cash** card and the compact price↔KG calculator. The large cash breakdown and cash-sent-home section are removed from Dashboard; the date picker and historical records still work.
+
+**Cash & online** is now inside **Sales → Daily sales** rather than a separate sidebar page. One sale date controls the entry list, cash/online totals, bank/wallet received amounts and transfer/payment history. Money transfer and cash-sent-home actions remain available there. Receive customer payment includes a date and checks both the customer's balance on that date and the current balance; online receipts appear in the correct day's totals and existing reports. Cash/online totals reuse existing transactions without reposting them.
+
+**Cylinder tracking** now includes full and empty location tables. Correct locations opens with the relevant Full/Empty choice, a size and source with available pieces, and a live availability message. Empty-location corrections stay separate from full-cylinder corrections. The save button explains unavailable/overlarge quantities and prevents overdrawing stock. Manual empty returns now allow selecting the return location. Existing corrections without a stock-kind field continue to mean Full. Location corrections do not move gas KG, cash or total pieces.

@@ -237,7 +237,7 @@ const assert = require('node:assert/strict');
  await page.locator('#quick-cash-form button[type=submit]').click();
  assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 1,360');
  // One credit workspace replaces three sidebar pages without losing balances.
- assert.equal(await page.locator('nav button').count(),13);
+ assert.equal(await page.locator('nav button').count(),12);
  assert.equal(await page.locator('nav [data-page="Automatic ledger"]').count(),0);
  await navigate('Customers & ledger');
  await page.locator('[data-customer-money="c5"][data-money-kind=debit]').click();
@@ -328,7 +328,7 @@ const assert = require('node:assert/strict');
  await page.reload();
  await navigate('Overview');
  const overview=await page.locator('#overview-stock-stats').innerText();
- assert.equal(await page.locator('#overview-stock-stats .stat').count(),8);
+ assert.equal(await page.locator('#overview-stock-stats .stat').count(),10);
  assert.equal(await page.locator('.dashboard-insights table').count(),1);
  assert.match(overview,/Gas stock/);assert.match(overview,/Parts stock value/);assert.match(overview,/Daily expenses/);assert.match(overview,/Empty cylinders available/);
  assert.equal((await page.evaluate(()=>emptyStockSummary())).count,expectedCount-2);
@@ -679,8 +679,8 @@ const assert = require('node:assert/strict');
  await page.locator('[data-action=part-sale]').click();await page.locator('[name=qty]').fill('1');await page.locator('[name=rate]').fill('300');await page.locator('#entry-form button[type=submit]').click();
  assert.equal(await page.evaluate(()=>dailyCash(today()).net),beforePartCash+300);
  await navigate('Overview');await page.locator('#dashboard-date').fill(await page.evaluate(()=>today()));
- assert.match(await page.locator('#parts-cash-payments').innerText(),/Rs./);assert.equal(await page.locator('#parts-cash-payments').innerText(),'Rs. '+await page.evaluate(()=>money(state.sales.filter(s=>s.date===today()&&s.kind==='Parts'&&(s.method||'Cash')==='Cash').reduce((n,s)=>n+s.paid,0))));
- await page.locator('#focus-global-search').click();assert.equal(await page.locator('#global-search').evaluate(el=>document.activeElement===el),true);
+ await navigate('Daily cash sales');await page.locator('#cash-date').fill(await page.evaluate(()=>today()));assert.match(await page.locator('#parts-cash-payments').innerText(),/Rs./);assert.equal(await page.locator('#parts-cash-payments').innerText(),'Rs. '+await page.evaluate(()=>money(state.sales.filter(s=>s.date===today()&&s.kind==='Parts'&&(s.method||'Cash')==='Cash').reduce((n,s)=>n+s.paid,0))));
+ await navigate('Overview');await page.locator('#focus-global-search').click();assert.equal(await page.locator('#global-search').evaluate(el=>document.activeElement===el),true);
  for(const size of ['11.8','15','45.4'])assert.ok((await page.locator('.dashboard-insights table').innerText()).includes(size+' kg'));
  // Supplier tabs retain complete totals while displaying only the requested side.
  await navigate('Supplier credit');if(await page.locator('.supplier-directory').count())await page.locator('[data-supplier-account]').first().click();const supplierTotals=await page.locator('#content .stats').innerText();
@@ -693,7 +693,7 @@ const assert = require('node:assert/strict');
  await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
  // Supplier cash stays out of daily total, but is shown/deducted once monthly.
  await page.setViewportSize({width:1440,height:1100});await navigate('Overview');await page.locator('#dashboard-date').fill(await page.evaluate(()=>today()));
- assert.doesNotMatch(await page.locator('.daily-cash-breakdown').innerText(),/Supplier/);
+ assert.doesNotMatch(await page.locator('.dashboard-cash-stat').innerText(),/Supplier/);
  const monthlyCash=await page.evaluate(()=>{const month=today().slice(0,7),r=monthReport(month);return {month,supplier:r.cashSupplierPayments,receipts:r.cashReceipts,expenses:r.cashExpenses,net:r.cashNet}});
  assert.equal(monthlyCash.supplier,150);assert.equal(monthlyCash.net,Math.round((monthlyCash.receipts-monthlyCash.expenses-150)*100)/100);
  await navigate('Monthly closing');await page.locator('#closing-month').fill(monthlyCash.month);
