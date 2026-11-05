@@ -28,9 +28,10 @@ function eventTime(row,isSale){
  return row.createdAt&&new Date(row.createdAt).toLocaleDateString('en-CA',{timeZone:'Asia/Karachi'})===row.date?Date.parse(row.createdAt):Date.parse(row.date+'T00:00:00+05:00');
 }
 function monthlyNetProfit(start,end){
- const events=[...allGasLosses().filter(r=>r.date<end).map(row=>({kind:'loss',row})),...state.stock.filter(r=>r.date<end).map(row=>({kind:'stock',row})),...state.sales.filter(s=>s.kind==='Gas'&&s.date<end).map(row=>({kind:'sale',row}))].sort((a,b)=>a.row.date.localeCompare(b.row.date)||eventTime(a.row,a.kind==='sale')-eventTime(b.row,b.kind==='sale')||(a.kind==='stock'?-1:1));
+ const events=[...(state.gasAdjustments||[]).filter(r=>r.date<end).map(row=>({kind:'adjustment',row})),...allGasLosses().filter(r=>r.date<end).map(row=>({kind:'loss',row})),...state.stock.filter(r=>r.date<end).map(row=>({kind:'stock',row})),...state.sales.filter(s=>s.kind==='Gas'&&s.date<end).map(row=>({kind:'sale',row}))].sort((a,b)=>a.row.date.localeCompare(b.row.date)||eventTime(a.row,a.kind==='sale')-eventTime(b.row,b.kind==='sale')||(a.kind==='stock'?-1:1));
  let qty=0,value=0,known=true,gasCost=0,partsCost=0,lossCost=0;const missing=[];
  for(const event of events){const row=event.row;
+  if(event.kind==='adjustment'){if(qty===0&&Number.isFinite(row.unitCost)){known=true;value=0}const average=row.qty>0&&Number.isFinite(row.unitCost)?row.unitCost:known&&qty>0?value/qty:null;if(average===null)known=false;else if(known)value+=row.qty*average;qty+=row.qty;if(Math.abs(qty)<1e-8){qty=0;value=0;known=true}continue;}
   if(event.kind==='stock'){
    if(qty===0){known=true;value=0}
    if(qty<0||!Number.isFinite(row.purchaseCost)||row.purchaseCost<0)known=false;

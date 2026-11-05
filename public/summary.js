@@ -6,12 +6,12 @@ function combinedLedgerPanel(){
 }
 function monthlyFinancialValues(report){
  const end=report.end||closingRange('monthly',report.month+'-01').end;
- const kg=Number.isFinite(report.gasClosing)?report.gasClosing:roundAmount(state.stock.filter(r=>r.date<end).reduce((a,r)=>a+r.qty,0)-state.sales.filter(s=>s.date<end&&s.kind==='Gas').reduce((a,s)=>a+s.qty,0)-allGasLosses().filter(l=>l.date<end).reduce((a,l)=>a+l.qty,0));
+ const kg=Number.isFinite(report.gasClosing)?report.gasClosing:roundAmount(gasInventoryRows().filter(r=>r.date<end).reduce((a,r)=>a+r.qty,0)-state.sales.filter(s=>s.date<end&&s.kind==='Gas').reduce((a,s)=>a+s.qty,0)-allGasLosses().filter(l=>l.date<end).reduce((a,l)=>a+l.qty,0));
  const priced=state.stock.filter(r=>r.date<end&&r.qty>0&&Number.isFinite(r.purchaseCost)&&r.purchaseCost>=0).slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||'').localeCompare(a.createdAt||''))[0];
- const gasRate=priced?priced.purchaseCost/priced.qty:null,gasValue=kg===0?0:kg>0&&gasRate!==null?roundAmount(kg*gasRate):null;
+ const adjustmentCost=(state.gasAdjustments||[]).filter(r=>r.date<end&&r.qty>0&&Number.isFinite(r.unitCost)).at(-1),gasRate=priced?priced.purchaseCost/priced.qty:adjustmentCost?.unitCost??null,gasValue=kg===0?0:kg>0&&gasRate!==null?roundAmount(kg*gasRate):null;
  const movements=state.partMovements.filter(m=>m.date<end),rawParts=movements.reduce((a,m)=>a+(m.direction==='In'?1:-1)*m.qty*m.cost,0),partsValue=rawParts<-.005?null:roundAmount(Math.max(0,rawParts));
  const monthStart=report.start||report.month+'-01',previous=new Date(monthStart+'T00:00:00Z');previous.setUTCMonth(previous.getUTCMonth()-1);const previousMonth=previous.toISOString().slice(0,7),saved=state.monthClosings[previousMonth]?.report;
- return {gasKg:kg,gasValue,gasRate,gasRateDate:priced?.date||null,partsValue,moneyInMarket:roundAmount(report.customers.reduce((a,c)=>a+Math.max(0,c.closing),0)),lastMonthClosing:saved?saved.closing:report.opening,lastMonthSaved:Boolean(saved),previousMonth,cash:Number.isFinite(report.cashNet)?report.cashNet:null};
+ return {gasKg:kg,gasValue,gasRate,gasRateDate:priced?.date||adjustmentCost?.date||null,partsValue,moneyInMarket:roundAmount(report.customers.reduce((a,c)=>a+Math.max(0,c.closing),0)),lastMonthClosing:saved?saved.closing:report.opening,lastMonthSaved:Boolean(saved),previousMonth,cash:Number.isFinite(report.cashNet)?report.cashNet:null};
 }
 function monthlyValueCards(report){
  const v=report.financialSummary;

@@ -7,6 +7,7 @@ function businessRecords(){
  const add=(type,rows,describe,amount)=>rows.forEach(row=>records.push({type,id:row.id,date:row.date||'',row,text:describe(row),amount:amount?amount(row):null}));
  add('Security deposit',state.cylinderSecurities,r=>`Invoice ${r.invoice} ${r.name||'Receipt bearer'} ${r.phone||''} ${r.qty} × ${r.capacity} kg ${r.variant} ${r.method}`,r=>r.amount);
  add('Security refund',state.securityRefunds,r=>`Deposit ${r.deposit} ${r.qty} cylinders returned ${r.method} ${r.note||''}`,r=>r.amount);
+ add('Gas stock correction',state.gasAdjustments,r=>`${r.qty} kg ${r.capacity} kg cylinders ${r.warehouse}`,r=>null);
  const client=r=>customer(r.customer)?.name||'Cash customer';
  const supplier=r=>state.suppliers.find(s=>s.id===r.supplier)?.name||'';
  add('Sale',state.sales,r=>`${client(r)} ${r.item||'LPG gas'} ${r.kind} ${r.channel} ${r.description||''} ${r.method||'Cash'} ${r.filledCylinderSale?.capacity||r.cylinderSale?.capacity||''}`,total);

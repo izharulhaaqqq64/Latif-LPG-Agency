@@ -1,5 +1,6 @@
 [
   "app.js",
+  "inventory-adjustments.js",
   "workflows.js",
   "trading.js",
   "closing.js",
@@ -22,5 +23,6 @@
   "walkin-sales.js",
   "cylinder-security.js",
   "easy-workspace.js",
+  "simple-accounts-stock.js",
   "search-receipts.js"
 ]
