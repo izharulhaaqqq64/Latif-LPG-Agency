@@ -564,7 +564,7 @@ const assert = require('node:assert/strict');
  await page.emulateMedia({media:'print'});assert.equal(await page.locator('.receipt-brand').evaluate(el=>getComputedStyle(el).display),'block');await page.emulateMedia({media:'screen'});
  await page.screenshot({path:'/tmp/latif-branded-receipt.png'});await page.locator('#close-dialog').click();
  await navigate('Automatic ledger');await page.locator('#ledger-customer').selectOption('c5');await page.locator('[data-payment-receipt]').first().click();assert.match(await page.locator('.print-receipt').innerText(),/03320981963/);await page.locator('#close-dialog').click();
- await navigate('Supplier credit');await page.locator('[data-supplier-print-id]').first().click();assert.match(await page.locator('.print-receipt').innerText(),/LATIF LPG AGENCY/);await page.locator('#close-dialog').click();
+ await navigate('Supplier credit');if(await page.locator('.supplier-directory').count())await page.locator('#supplier-filter').selectOption(await page.evaluate(()=>state.supplierPurchases[0]?.supplier||state.supplierPayments[0].supplier));await page.locator('[data-supplier-print-id]').first().click();assert.match(await page.locator('.print-receipt').innerText(),/LATIF LPG AGENCY/);await page.locator('#close-dialog').click();
  assert.equal(await page.evaluate(()=>validateBackup(backupPayload()).sales.length),await page.evaluate(()=>state.sales.length));
  await page.setViewportSize({width:390,height:844});
  await page.locator('#menu').click();
@@ -683,7 +683,7 @@ const assert = require('node:assert/strict');
  await page.locator('#focus-global-search').click();assert.equal(await page.locator('#global-search').evaluate(el=>document.activeElement===el),true);
  for(const size of ['11.8','15','45.4'])assert.ok((await page.locator('.dashboard-insights table').innerText()).includes(size+' kg'));
  // Supplier tabs retain complete totals while displaying only the requested side.
- await navigate('Supplier credit');const supplierTotals=await page.locator('#content .stats').innerText();
+ await navigate('Supplier credit');if(await page.locator('.supplier-directory').count())await page.locator('[data-supplier-account]').first().click();const supplierTotals=await page.locator('#content .stats').innerText();
  await page.locator('[data-workspace-tab="suppliers:credit"]').click();assert.equal(await page.locator('#content .stats').innerText(),supplierTotals);
  assert.ok((await page.locator('#content tbody tr').count())>0);
  await page.locator('[data-workspace-tab="suppliers:debit"]').click();assert.equal(await page.locator('#content .stats').innerText(),supplierTotals);
