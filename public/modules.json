@@ -17,5 +17,6 @@
   "reminders.js",
   "record-editor.js",
   "finance-loss.js",
+  "automatic-residual.js",
   "search-receipts.js"
 ]

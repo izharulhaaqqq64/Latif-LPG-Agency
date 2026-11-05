@@ -20,6 +20,7 @@ function businessRecords(){
  add('Parts movement',state.partMovements,r=>`${state.partItems.find(p=>p.id===r.part)?.name||''} ${r.direction} ${r.qty} ${r.note||''}`);
  add('WhatsApp reminder',state.paymentReminders,r=>`${client(r)} ${r.phone} ${r.status} ${r.message}`,r=>r.amount);
  add('Cash transfer',state.cashTransfers,r=>`${r.from} → ${r.to} ${r.recipient||''} ${r.purpose} ${r.reference||''} ${r.note||''}`,r=>r.amount);
+ add('Automatic residual',automaticResidual().losses,r=>`${r.warehouse} invoice ${r.sourceSale} batch ${r.sourceReceipt} ${gasNumber(r.qty)} kg estimated loss`);
  add('Gas loss',state.gasLosses,r=>`${r.warehouse} ${r.cylinders} × ${r.capacity} kg ${gasNumber(r.qty)} kg loss ${r.basis} ${r.note||''}`);
  add('Customer debit',state.creditEntries,r=>`${client(r)} ${r.note||''}`,r=>r.amount);
  add('Empty cylinder movement',state.emptyCylinderMovements,r=>`${r.direction} ${r.qty} × ${r.capacity} kg ${r.note||''}`);

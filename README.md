@@ -1,6 +1,6 @@
 # Latif LPG Agency
 
-A private English-language LPG business application with one-owner login, shared SQLite storage and responsive laptop/mobile screens. See **[PRIVATE-SETUP.md](PRIVATE-SETUP.md)** for account creation, migration and HTTPS hosting.
+A private English-language LPG business application with owner/manager/driver logins, shared SQLite storage and responsive laptop/mobile screens. See **[PRIVATE-SETUP.md](PRIVATE-SETUP.md)** for account creation, migration and HTTPS hosting.
 
 ## Run
 
@@ -208,12 +208,12 @@ To revise a saved closing, choose Edit in the manager and confirm **Reopen for e
 
 ## Private server release
 
-Version 2 adds private owner setup/login, password changes, 12-hour sessions, shared storage, safe device migration, queued saves, conflict recovery and server recovery downloads. All business functions remain available after signing in. Read [PRIVATE-SETUP.md](PRIVATE-SETUP.md) before deployment. Existing notes about browser storage refer to the device cache; the server database is authoritative once synchronized.
+Version 2 adds private account setup/login, password changes, 12-hour sessions, shared storage, safe device migration, queued saves, conflict recovery and server recovery downloads. All business functions remain available after signing in. Read [PRIVATE-SETUP.md](PRIVATE-SETUP.md) before deployment. Existing notes about browser storage refer to the device cache; the server database is authoritative once synchronized.
 
 
 ## Cash, online payments and residual gas
 
-Overview's dated daily rate now includes a live **Price ↔ KG calculator**. Enter rupees to calculate kg (`amount / perKg`), or kg to calculate price (`kg × perKg`). The preview follows the entered rate; save the daily rate to use it in sales. **Daily sales → Calculate KG from daily rate** fills the optional gas weight using the saved rate for that sale's date (rounded to the sale's 0.01 kg precision). Replace the estimate with actual weighed gas if different. Calculation alone creates no sale.
+Overview's dated daily rate now includes a live **Price ↔ KG calculator**. Enter rupees to calculate kg (`amount / perKg`), or kg to calculate price (`kg × perKg`). The preview follows the entered rate; save the daily rate to use it in sales. **Daily sales → Save payment & calculate gas** calculates weight using the saved date rate or the entered customer rate, to 0.001 kg; there is no separate calculate button. Replace the estimate with actual weighed gas if different. Calculation alone creates no sale.
 
 **Cash & online → Cash & money transfers** records cash sent home, personal advances, money sent online and transfers between Cash / Bank transfer / Easypaisa-JazzCash. Choose From, To, purpose, amount and optional recipient/reference/description. **Outside business → Cash/Bank/Wallet** records money returned or deposited. A Home/Personal advance transfer is an owner/personal money movement and does not reduce operating profit or create a customer invoice. Record actual business expenses or supplier settlement in their own tabs to avoid duplicate entries. Transfers do not claim an actual till or bank balance because opening account balances are excluded.
 
@@ -224,3 +224,24 @@ Daily reports, weekly closings and monthly closings now include Bank/Wallet rece
 **Gas & inventory → Record gas loss** records discarded residual gas by size, location, cylinder count and grams per cylinder. The default is **350 g**, editable for a 300/400 g estimate or an actual measurement. Example: **10 cylinders × 350 g = 3.5 kg**. Select Estimated or Measured. Only record gas that was included in stock and is now discarded/unusable; do not deduct gas already excluded by a measurement or another record. Loss reduces gas kg once and leaves container counts, customer balances and cash unchanged. Quantities are stored to 0.001 kg.
 
 Gas loss is included in daily/weekly/monthly gas opening/closing stock. Monthly net profit subtracts its chronological weighted-average purchase cost as a separate non-cash inventory write-off. It is not valued at the daily selling price or charged again as an operating expense. Missing purchase costs leave profit incomplete. New loss records cannot exceed recorded stock at that location. Edits/deletes, backups, private-device synchronization and closing locks cover both transfers and losses.
+
+
+## One-button sale, customer rates and automatic retail residual
+
+Daily sales has a single **Save payment & calculate gas** button. The visible price-per-KG field starts with the selected date's daily rate and can be overridden for the current customer. Saving calculates weight from payment/price to 0.001 kg. An entered actual KG overrides the calculation. The custom price is recorded without changing the daily price list. Without either price or actual weight the payment remains unmeasured, preserving legacy payment-only use; set the daily price for normal automatic operation.
+
+New plant/cylinder gas purchases have an **Automatic residual allowance** setting, enabled by default with **400 g per cylinder**, editable within the usual 300–500 g estimate. The value is saved per batch and becomes the default for subsequent purchases. Counts come from the actual cylinder breakdown. A weight-only receipt needs its actual cylinder count if the allowance is explicitly enabled through Edit. Total KG alone cannot determine how many cylinders were bought. Existing receipts remain unchanged unless explicitly enabled.
+
+Example: **600 kg in 40 × 15 kg cylinders**, at **400 g** per cylinder, has an initial retail residual allowance of **16 kg** and estimated usable retail gas of **584 kg**. No loss is charged while the batch is unsold. When one quarter of its usable gas (146 kg) is sold retail by KG, 4 kg residual is recognized. Once all 584 kg is sold retail, total residual is exactly 16 kg. Quantities are allocated FIFO by location, using integer grams to avoid accumulated rounding drift.
+
+**Only Retail / Per KG gas sales recognize automatic loss. Wholesale, supply and Full cylinder gas sales create no automatic wastage.** Their gross quantity leaves the batch and its corresponding allowance is removed from future retail estimates. For a named retail full-cylinder sale select **Gas sale type → Full cylinder**. Older explicit full-dispatch invoice records are also excluded unless explicitly classified Per KG. Empty-container sales are separate and never generate gas loss.
+
+Recognized automatic residual appears in inventory and daily/weekly/monthly reports. Purchase-cost write-off is included once in monthly profit. Unsold reserve is displayed separately from recognized loss; it is not expensed upfront. Edits and deletions recalculate derived residual without appending duplicate loss entries, while closing locks protect saved periods. New sales cannot consume gas reserved as trapped residual.
+
+**Gas inventory → Wastage & residual** opens the gas-loss section. Manual loss remains available for additional measured losses, not for repeating the batch's automatic estimate. Automatic entries are changed through their source batch; they are derived from saved purchase and sale data and synchronize consistently across devices.
+
+## Five logins and business owner names
+
+There are exactly **3 owner slots, 1 manager and 1 driver**. All owners have full access to records, accounts and server recovery backups. The first owner activates the other four slots with individual names/usernames/passwords in **Account & backups → Manage 5 logins**. Disabled slots cannot sign in and have no default password. The manager handles business records; the driver has a separate delivery/cylinder view without prices, debt or financial APIs.
+
+Use **Save name** in Account & backups to edit your owner/account name. **Save**, **Open** (backup preview) and **Exit** (sign out) are available in the main file controls. Existing browser and server data, including the previous owner password, are preserved on upgrade.

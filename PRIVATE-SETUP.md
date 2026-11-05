@@ -41,9 +41,15 @@ After a page reload, a matching pending save retries before the workspace opens.
 
 **Open backup** deliberately replaces the shared dataset after its preview/confirmation and uses the same revision/conflict checks. All devices then see the restored records. Download a current backup first.
 
+## Accounts, names and file controls
+
+The first owner account automatically creates the other four disabled slots: two owners, one manager and one driver. In **Account & backups → Manage 5 logins**, choose each slot, set its name/username and a strong password, then enable it. No default/shared passwords are provided. Roles and slot counts are fixed. All three owners have full business and account administration access. Managers can work with the business dataset but cannot manage logins or download historical server recovery copies. Drivers have a separate read-only supply/cylinder view; financial APIs, backups and business scripts are blocked server-side.
+
+**Save name** changes the signed-in owner/account name shown in the sidebar. **Save** requests a shared save; wait for Synced. **Open** previews a JSON backup before replacing shared records. **Exit** safely signs out without stopping the server needed by other users. Use separate browser profiles on shared devices and Exit before handing a device to another user; device caches are not encrypted. Existing owner accounts/passwords migrate automatically on upgrade.
+
 ## Password and recovery
 
-- **Account & backups → Change password** requires the current password. Other device sessions are revoked and must sign in again.
+- **Account & backups → Change password** requires the current password. Other sessions for that login are revoked and must sign in again.
 - Forgotten password: on the server machine run `node reset-password.js` (or **RESET-PASSWORD.bat** on Windows). Enter the new password twice; it is not echoed. This requires local server filesystem access and signs out all sessions. Run it against the same LPG_DATA_DIR as the app.
 - Setup can only create the first owner. Keep server filesystem access private.
 
@@ -53,7 +59,12 @@ Passwords are salted and hashed using scrypt. Session tokens are stored hashed i
 
 The private server retains the **20 previous dataset revisions** and **the latest saved snapshot for each of the last 30 active days**. Download them from Account & backups; restore through Open backup. These recovery copies are inside the same database, not an offsite backup. Continue downloading independent JSON backups and use your host's disk backup service to protect against disk/account loss. For a file-level SQLite backup, stop the server first and copy its entire data directory; do not copy only an active WAL database file.
 
-The dataset limit is 10 MB. The first version has one owner account, online login, a single shared dataset and conflict recovery. It is not a full offline-installable PWA or a multi-user role system. PWA installation/offline access can be added separately without weakening login protection.
+The dataset limit is 10 MB. The first version has five fixed login slots (three owners, one manager, one driver), online login, a single shared dataset and conflict recovery. It is not a full offline-installable PWA with offline login support. PWA installation/offline access can be added separately without weakening login protection.
 
 
 Version 2.1 also synchronizes cash/online transfers, payment references and measured/estimated residual gas write-offs. Those records are included in device backups and server recovery snapshots.
+
+
+Version 2.2 adds per-customer sale price overrides, one-button calculate/save, five login slots, and batch-based automatic residual accounting limited to retail per-KG sales. See README for its FIFO and reporting rules.
+
+Login names/password hashes are held in the server database, not in business JSON exports. Preserve the full server data directory when moving an existing installation to retain all five logins; importing a business JSON backup into a new server requires setting up that server's logins separately.

@@ -23,7 +23,7 @@ function eventTime(row,isSale){
  return row.createdAt&&new Date(row.createdAt).toLocaleDateString('en-CA',{timeZone:'Asia/Karachi'})===row.date?Date.parse(row.createdAt):Date.parse(row.date+'T00:00:00+05:00');
 }
 function monthlyNetProfit(start,end){
- const events=[...(state.gasLosses||[]).filter(r=>r.date<end).map(row=>({kind:'loss',row})),...state.stock.filter(r=>r.date<end).map(row=>({kind:'stock',row})),...state.sales.filter(s=>s.kind==='Gas'&&s.date<end).map(row=>({kind:'sale',row}))].sort((a,b)=>a.row.date.localeCompare(b.row.date)||eventTime(a.row,a.kind==='sale')-eventTime(b.row,b.kind==='sale')||(a.kind==='stock'?-1:1));
+ const events=[...allGasLosses().filter(r=>r.date<end).map(row=>({kind:'loss',row})),...state.stock.filter(r=>r.date<end).map(row=>({kind:'stock',row})),...state.sales.filter(s=>s.kind==='Gas'&&s.date<end).map(row=>({kind:'sale',row}))].sort((a,b)=>a.row.date.localeCompare(b.row.date)||eventTime(a.row,a.kind==='sale')-eventTime(b.row,b.kind==='sale')||(a.kind==='stock'?-1:1));
  let qty=0,value=0,known=true,gasCost=0,partsCost=0,lossCost=0;const missing=[];
  for(const event of events){const row=event.row;
   if(event.kind==='stock'){

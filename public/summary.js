@@ -6,7 +6,7 @@ function combinedLedgerPanel(){
 }
 function monthlyFinancialValues(report){
  const end=report.end||closingRange('monthly',report.month+'-01').end;
- const kg=Number.isFinite(report.gasClosing)?report.gasClosing:roundAmount(state.stock.filter(r=>r.date<end).reduce((a,r)=>a+r.qty,0)-state.sales.filter(s=>s.date<end&&s.kind==='Gas').reduce((a,s)=>a+s.qty,0)-(state.gasLosses||[]).filter(l=>l.date<end).reduce((a,l)=>a+l.qty,0));
+ const kg=Number.isFinite(report.gasClosing)?report.gasClosing:roundAmount(state.stock.filter(r=>r.date<end).reduce((a,r)=>a+r.qty,0)-state.sales.filter(s=>s.date<end&&s.kind==='Gas').reduce((a,s)=>a+s.qty,0)-allGasLosses().filter(l=>l.date<end).reduce((a,l)=>a+l.qty,0));
  const priced=state.stock.filter(r=>r.date<end&&r.qty>0&&Number.isFinite(r.purchaseCost)&&r.purchaseCost>=0).slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.createdAt||'').localeCompare(a.createdAt||''))[0];
  const gasRate=priced?priced.purchaseCost/priced.qty:null,gasValue=kg===0?0:kg>0&&gasRate!==null?roundAmount(kg*gasRate):null;
  const movements=state.partMovements.filter(m=>m.date<end),rawParts=movements.reduce((a,m)=>a+(m.direction==='In'?1:-1)*m.qty*m.cost,0),partsValue=rawParts<-.005?null:roundAmount(Math.max(0,rawParts));

@@ -36,8 +36,9 @@ function editFields(type,r){
  if(type==='WhatsApp reminder')return editText('Recorded message','message',r.message)+editText('Phone (country code, digits only)','phone',r.phone);
  if(type==='Sale'){
   let html=date()+editCustomer(r,true);
-  if(r.directCash)html+=editNumber('Payment amount','amount',total(r))+editNumber('Gas kg (0 if unrecorded)','qty',r.qty);
+  if(r.directCash)html+=editNumber('Payment amount','amount',total(r))+editNumber('Gas kg (0 if unrecorded)','qty',r.qty)+editNumber('Quoted customer price per kg','quotedRate',r.quotedRate,true);
   else html+=editNumber(r.cylinderSale?'Empty cylinder quantity':r.kind==='Gas'?'Gas kg':'Part quantity','qty',r.qty,false,r.kind!=='Gas')+editNumber('Selling price per kg / piece','rate',r.rate)+editNumber('Received at sale','paid',r.paid);
+  if(r.kind==='Gas'&&!r.directCash)html+=editSelect('Gas sale type','saleBasis',['Per KG','Full cylinder'],r.saleBasis||'Per KG');
   html+=editMethod(r)+editText('Description (optional)','item',r.item)+editSelect('Sales channel','channel',['Retail','Wholesale','Supply'],r.channel);
   if(r.cylinderSale)html+=sizes()+editNumber('Actual container cost per piece','costPerUnit',r.costPerUnit,true);
   const linked=state.cylinders.filter(c=>c.invoice===r.id);
@@ -85,8 +86,8 @@ function applyRecordEdit(target,f){
  if('note' in f)r.note=f.note.trim();
  if(type==='Customer payment'||type==='Customer debit'||type==='Expense'||type==='Supplier payment'){r.amount=num('amount',true);if(type==='Expense')r.category=f.category;return}
  if(type==='Sale'){
-  r.qty=num('qty',!r.directCash,r.kind!=='Gas');r.item=f.item.trim();r.description=r.item;r.channel=f.channel;
-  if(r.directCash){r.amount=num('amount',true);r.paid=r.amount;r.rate=r.qty?r.amount/r.qty:0}else{r.rate=num('rate',true);r.amount=roundAmount(r.qty*r.rate);r.paid=num('paid');if(r.paid>r.amount)throw Error('Payment exceeds the invoice.');if(r.paid<r.amount&&!r.customer)throw Error('A credit sale needs a customer.');}
+  r.qty=num('qty',!r.directCash,r.kind!=='Gas');r.item=f.item.trim();r.description=r.item;r.channel=f.channel;if(f.saleBasis){if(!['Per KG','Full cylinder'].includes(f.saleBasis))throw Error('Invalid sale type.');r.saleBasis=f.saleBasis;}
+  if(r.directCash){if(f.quotedRate!=='')r.quotedRate=num('quotedRate',true);else delete r.quotedRate;r.amount=num('amount',true);r.paid=r.amount;r.rate=r.qty?r.amount/r.qty:0}else{r.rate=num('rate',true);r.amount=roundAmount(r.qty*r.rate);r.paid=num('paid');if(r.paid>r.amount)throw Error('Payment exceeds the invoice.');if(r.paid<r.amount&&!r.customer)throw Error('A credit sale needs a customer.');}
   if(r.cylinderSale){if(!CYLINDER_SIZES.includes(f.capacity))throw Error('Invalid cylinder capacity.');r.cylinderSale={...r.cylinderSale,capacity:f.capacity,quantity:r.qty,price:r.rate};const cost=optional('costPerUnit');if(cost===null)delete r.costPerUnit;else r.costPerUnit=cost;state.emptyCylinderMovements.filter(m=>m.invoice===r.id).forEach(m=>Object.assign(m,{capacity:f.capacity,qty:r.qty,date:r.date}));}
   state.partMovements.filter(m=>m.invoice===r.id).forEach(m=>Object.assign(m,{qty:r.qty,rate:r.rate,date:r.date}));
   state.cylinders.filter(c=>c.invoice===r.id).forEach(c=>{requireRecordDate(c);const full=state.fullCylinderMovements.some(m=>m.source===c.id),empty=state.emptyCylinderMovements.some(m=>m.cylinderMovement===c.id);c.qty=num('cyl_'+c.id,false,true);if(![...CYLINDER_SIZES,'unknown'].includes(f['cyl_size_'+c.id])||!['Original','Local','Unspecified'].includes(f['cyl_type_'+c.id]))throw Error('Invalid linked cylinder size/type.');c.capacity=f['cyl_size_'+c.id];c.cylinderType=f['cyl_type_'+c.id];c.customer=r.customer;c.date=r.date;if(!c.customer)throw Error('Linked cylinders require a customer.');rebuildCylinder(c,full,empty)});return;
@@ -130,7 +131,7 @@ function applyRecordDelete({type,id,row:r}){
 // while refusing any new or worsened shortage/overpayment.
 function assertNoWorseTimeline(before,after,label){const keys=new Set([...before.keys(),...after.keys()]);for(const key of keys){const old=before.get(key)||[],next=after.get(key)||[],dates=[...new Set([...old,...next].map(x=>x.date))].sort();let a=0,b=0;for(const date of dates){a+=old.filter(x=>x.date===date).reduce((s,x)=>s+x.qty,0);b+=next.filter(x=>x.date===date).reduce((s,x)=>s+x.qty,0);if(b<Math.min(0,a)-.005)throw Error(label+' would become negative. Correct dependent entries first.');}}}
 function balanceEvents(data,kind){const map=new Map(),add=(key,date,qty)=>{if(!map.has(key))map.set(key,[]);map.get(key).push({date:date||'0000-01-01',qty})};
- if(kind==='gas'){for(const l of data.gasLosses||[])add(l.warehouse,l.date,-l.qty);for(const x of data.stock)add(x.warehouse,x.date,x.qty);for(const x of data.sales.filter(s=>s.kind==='Gas'))add(x.channel==='Wholesale'?'Main godown':x.channel==='Supply'?'Supply vehicle':'Shop',x.date,-x.qty)}
+ if(kind==='gas'){for(const l of allGasLosses(data))add(l.warehouse,l.date,-l.qty);for(const x of data.stock)add(x.warehouse,x.date,x.qty);for(const x of data.sales.filter(s=>s.kind==='Gas'))add(x.channel==='Wholesale'?'Main godown':x.channel==='Supply'?'Supply vehicle':'Shop',x.date,-x.qty)}
  if(kind==='customer'){for(const c of data.customers)add(c.id,c.date,c.opening);for(const x of data.sales)if(x.customer)add(x.customer,x.date,total(x)-x.paid);for(const x of data.creditEntries)add(x.customer,x.date,x.amount);for(const x of data.receipts)add(x.customer,x.date,-x.amount)}
  if(kind==='supplier'){for(const s of data.suppliers)add(s.id,s.date,s.opening);for(const x of data.supplierPurchases)add(x.supplier,x.date,x.total-x.paid);for(const x of data.supplierPayments)add(x.supplier,x.date,-x.amount)}
  if(kind==='parts')for(const x of data.partMovements)add(x.part,x.date,(x.direction==='In'?1:-1)*x.qty);
@@ -144,7 +145,7 @@ function recostEditedParts(before){
  for(const part of changed){let qty=0,value=0;for(const m of state.partMovements.filter(m=>m.part===part).slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.createdAt||'').localeCompare(b.createdAt||''))){if(m.direction==='In'){qty+=m.qty;value+=m.qty*m.cost}else{const cost=qty>0?value/qty:m.cost;if(Math.abs(m.cost-cost)>.000001){assertDateOpen(m.date);m.cost=cost;const sale=state.sales.find(s=>s.id===m.invoice);if(sale){assertDateOpen(sale.date);sale.costPerUnit=cost}}qty-=m.qty;value-=m.qty*m.cost;}}}
 }
 function validateRecordChange(before){
- validateBackup(backupPayload());
+ validateBackup(backupPayload());validateAutomaticResidual(state);
  for(const kind of ['gas','customer','supplier','parts','cylinders'])assertNoWorseTimeline(balanceEvents(before,kind),balanceEvents(state,kind),kind+' balance');
  for(const empty of [true,false])assertNoWorseTimeline(stockCountEvents(before,empty),stockCountEvents(state,empty),empty?'Empty cylinder stock':'Full cylinder stock');
  for(const s of state.supplierPurchases.concat(state.supplierPayments)){const supplier=state.suppliers.find(x=>x.id===s.supplier);if(s.date<supplier.date)throw Error('Supplier transaction precedes its opening date.');}
