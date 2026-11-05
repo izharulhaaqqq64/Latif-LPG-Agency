@@ -23,8 +23,8 @@ function eventTime(row,isSale){
  return row.createdAt&&new Date(row.createdAt).toLocaleDateString('en-CA',{timeZone:'Asia/Karachi'})===row.date?Date.parse(row.createdAt):Date.parse(row.date+'T00:00:00+05:00');
 }
 function monthlyNetProfit(start,end){
- const events=[...state.stock.filter(r=>r.date<end).map(row=>({kind:'stock',row})),...state.sales.filter(s=>s.kind==='Gas'&&s.date<end).map(row=>({kind:'sale',row}))].sort((a,b)=>a.row.date.localeCompare(b.row.date)||eventTime(a.row,a.kind==='sale')-eventTime(b.row,b.kind==='sale')||(a.kind==='stock'?-1:1));
- let qty=0,value=0,known=true,gasCost=0,partsCost=0;const missing=[];
+ const events=[...(state.gasLosses||[]).filter(r=>r.date<end).map(row=>({kind:'loss',row})),...state.stock.filter(r=>r.date<end).map(row=>({kind:'stock',row})),...state.sales.filter(s=>s.kind==='Gas'&&s.date<end).map(row=>({kind:'sale',row}))].sort((a,b)=>a.row.date.localeCompare(b.row.date)||eventTime(a.row,a.kind==='sale')-eventTime(b.row,b.kind==='sale')||(a.kind==='stock'?-1:1));
+ let qty=0,value=0,known=true,gasCost=0,partsCost=0,lossCost=0;const missing=[];
  for(const event of events){const row=event.row;
   if(event.kind==='stock'){
    if(qty===0){known=true;value=0}
@@ -35,14 +35,14 @@ function monthlyNetProfit(start,end){
   if(!(row.qty>0)){if(total(row)>0){if(inPeriod)missing.push({id:row.id,reason:'Gas weight not recorded'});known=false}continue}
   const average=known&&qty>=row.qty&&qty>0?value/qty:null;
   const cost=Number.isFinite(row.costPerUnit)&&row.costPerUnit>=0?row.costPerUnit:average;
-  if(inPeriod){if(cost===null)missing.push({id:row.id,reason:'Gas purchase cost / stock history incomplete'});else gasCost+=row.qty*cost}
+  if(inPeriod){if(cost===null)missing.push({id:row.id,reason:event.kind==='loss'?'Gas loss purchase cost / stock history incomplete':'Gas purchase cost / stock history incomplete'});else if(event.kind==='loss')lossCost+=row.qty*cost;else gasCost+=row.qty*cost}
   if(average!==null)value-=row.qty*average;else known=false;
   qty-=row.qty;if(Math.abs(qty)<1e-8){qty=0;value=0;known=true}
  }
  const sales=state.sales.filter(s=>s.date>=start&&s.date<end);
  for(const sale of sales.filter(s=>s.kind==='Parts')){if(!Number.isFinite(sale.costPerUnit)||sale.costPerUnit<0)missing.push({id:sale.id,reason:'Parts purchase cost not recorded'});else partsCost+=sale.qty*sale.costPerUnit}
  const revenue=roundAmount(sales.reduce((a,s)=>a+total(s),0)),expenses=roundAmount(state.expenses.filter(e=>e.date>=start&&e.date<end).reduce((a,e)=>a+e.amount,0));
- return {complete:missing.length===0,revenue,gasCost:roundAmount(gasCost),partsCost:roundAmount(partsCost),expenses,netProfit:missing.length?null:roundAmount(revenue-gasCost-partsCost-expenses),missing};
+ return {complete:missing.length===0,revenue,gasCost:roundAmount(gasCost),partsCost:roundAmount(partsCost),lossCost:roundAmount(lossCost),expenses,netProfit:missing.length?null:roundAmount(revenue-gasCost-partsCost-lossCost-expenses),missing};
 }
 function netProfitCard(report){
  const profit=report.profit;

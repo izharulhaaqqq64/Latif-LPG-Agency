@@ -1,6 +1,6 @@
 state.dailyRates ??= {};
 let pendingBackup=null;
-const BACKUP_ARRAYS=['customers','sales','receipts','stock','cylinders','partItems','partMovements','creditEntries','expenses','emptyCylinderMovements','fullCylinderCounts','fullCylinderMovements','costCorrections','suppliers','supplierPurchases','supplierPayments','paymentReminders'];
+const BACKUP_ARRAYS=['customers','sales','receipts','stock','cylinders','partItems','partMovements','creditEntries','expenses','emptyCylinderMovements','fullCylinderCounts','fullCylinderMovements','costCorrections','suppliers','supplierPurchases','supplierPayments','paymentReminders','cashTransfers','gasLosses'];
 function backupPayload(){return {format:'latif-lpg-backup',version:1,exportedAt:new Date().toISOString(),data:state}}
 function validateBackup(payload){
  if(payload?.format&&payload.format!=='latif-lpg-backup')throw Error('This is not a Latif LPG backup.');if(payload?.format&&payload.version!==1)throw Error('Unsupported backup version.');
@@ -25,6 +25,8 @@ function validateBackup(payload){
  for(const name of ['cylinders','emptyCylinderMovements','fullCylinderMovements'])for(const row of data[name])if(!['In','Out'].includes(row.direction)||!Number.isSafeInteger(row.qty)||row.qty<0)throw Error('Invalid cylinder movement.');
  for(const row of data.cylinders)if(row.cylinderType!=null&&!['Original','Local','Unspecified'].includes(row.cylinderType))throw Error('Invalid cylinder type.');
  for(const row of data.fullCylinderCounts)if(!Number.isSafeInteger(row.qty)||row.qty<0)throw Error('Invalid cylinder count.');
+ for(const row of data.cashTransfers){if(!['Cash','Bank transfer','Easypaisa / JazzCash','Outside business'].includes(row.from)||!['Cash','Bank transfer','Easypaisa / JazzCash','Home / owner','Friend / other person'].includes(row.to)||row.from===row.to||row.from==='Outside business'&&!['Cash','Bank transfer','Easypaisa / JazzCash'].includes(row.to)||!Number.isFinite(row.amount)||row.amount<=0||!['Owner withdrawal','Personal advance','Return / deposit','Business account transfer','Other'].includes(row.purpose))throw Error('Invalid cash/online transfer.');}
+ for(const row of data.gasLosses){if(!CYLINDER_SIZES.includes(String(row.capacity))||!['Shop','Main godown','Supply vehicle'].includes(row.warehouse)||!Number.isSafeInteger(row.cylinders)||row.cylinders<=0||!Number.isFinite(row.gramsPerCylinder)||row.gramsPerCylinder<=0||row.gramsPerCylinder>Number(row.capacity)*1000||!Number.isFinite(row.qty)||row.qty<=0||!Number.isSafeInteger(Math.round(row.cylinders*row.gramsPerCylinder))||Math.abs(row.qty-Math.round(row.cylinders*row.gramsPerCylinder)/1000)>.000001||!['Estimated','Measured'].includes(row.basis))throw Error('Invalid gas loss record.');}
  for(const row of data.expenses)number(row,'amount','expenses');
  const maps={monthClosings:{},emptyCylinderOpening:{},stockAlertSettings:{gasKg:500,partsQty:5},cylinderAlertLevels:{'11.8':5,'15':5,'45.5':5},dailyRates:{},periodClosings:{daily:{},weekly:{}}};
  for(const [name,fallback] of Object.entries(maps)){data[name]??=structuredClone(fallback);if(!data[name]||typeof data[name]!=='object'||Array.isArray(data[name]))throw Error('Invalid '+name)}

@@ -54,3 +54,6 @@ Passwords are salted and hashed using scrypt. Session tokens are stored hashed i
 The private server retains the **20 previous dataset revisions** and **the latest saved snapshot for each of the last 30 active days**. Download them from Account & backups; restore through Open backup. These recovery copies are inside the same database, not an offsite backup. Continue downloading independent JSON backups and use your host's disk backup service to protect against disk/account loss. For a file-level SQLite backup, stop the server first and copy its entire data directory; do not copy only an active WAL database file.
 
 The dataset limit is 10 MB. The first version has one owner account, online login, a single shared dataset and conflict recovery. It is not a full offline-installable PWA or a multi-user role system. PWA installation/offline access can be added separately without weakening login protection.
+
+
+Version 2.1 also synchronizes cash/online transfers, payment references and measured/estimated residual gas write-offs. Those records are included in device backups and server recovery snapshots.

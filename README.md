@@ -149,7 +149,7 @@ Open **Receipts** in the sidebar or beside the search bar to find saved sales, c
 
 Gas inventory uses **11.8 kg, 15 kg and 45.5 kg cylinder counts**. **Add cylinders** automatically records quantity × capacity as measured gas kg and adds full-cylinder movements once. **Add kg receipt** remains available for weight-only arrivals. Physical cylinder counts remain independent of measured gas: loose-kg sales cannot identify which cylinder size was used. Existing records, including legacy 45.4 kg entries, are preserved.
 
-The headline **Total daily cash** now shows cash sales + cash collections − cash operating expenses. Bank/wallet transactions stay outside cash; the breakdown shows each deduction. This is the day's net movement, excluding opening cash.
+The headline **Total daily cash** now shows cash sales + cash collections − cash operating expenses + transfers in − transfers out. Bank/wallet transactions stay outside cash; the breakdown shows each deduction. This is the day's net movement, excluding opening cash.
 
 **Daily sales** accepts payment amount, optional gas kg, optional description and Cash / Bank transfer / Easypaisa-JazzCash. Entered kg reduce Shop gas stock once; blank kg remain unmeasured. No customer name is needed for these fully paid sales. The overview daily price list shows per kg and 11.8 / 15 / 45.5 kg prices calculated from the saved dated selling rate.
 
@@ -179,7 +179,7 @@ App branding and the Receipts section retain the supplied flame logo, **LATIF LP
 
 ## Supplier cash and customer statement links
 
-**Total daily cash** = gas/parts cash receipts + customer cash collections − cash operating expenses. Supplier payments do not reduce this daily figure. The monthly report has a separate **Supplier cash payments** card; its **Cash** value deducts those payments exactly once. Paid-now supplier purchase amounts and later cash payments are included; bank/wallet payments are excluded. Supplier settlement remains separate from expenses and net profit. Saved monthly closings retain these amounts; older snapshots without a recorded supplier total show Not recorded rather than being recalculated.
+**Total daily cash** = gas/parts cash receipts + customer cash collections − cash operating expenses + cash transfers in − cash transfers out. Supplier payments do not reduce this daily figure. The monthly report has a separate **Supplier cash payments** card; its **Cash** value deducts those payments exactly once. Paid-now supplier purchase amounts and later cash payments are included; bank/wallet payments are excluded. Supplier settlement remains separate from expenses and net profit. Saved monthly closings retain these amounts; older snapshots without a recorded supplier total show Not recorded rather than being recalculated.
 
 Customer names in monthly, daily and weekly statements open their clickable money/cylinder ledger. The selected customer statement heading also opens the ledger. Invoice/payment/cylinder/manual-entry links inside it open the underlying saved detail. Viewing and printing leave business records unchanged.
 
@@ -209,3 +209,18 @@ To revise a saved closing, choose Edit in the manager and confirm **Reopen for e
 ## Private server release
 
 Version 2 adds private owner setup/login, password changes, 12-hour sessions, shared storage, safe device migration, queued saves, conflict recovery and server recovery downloads. All business functions remain available after signing in. Read [PRIVATE-SETUP.md](PRIVATE-SETUP.md) before deployment. Existing notes about browser storage refer to the device cache; the server database is authoritative once synchronized.
+
+
+## Cash, online payments and residual gas
+
+Overview's dated daily rate now includes a live **Price ↔ KG calculator**. Enter rupees to calculate kg (`amount / perKg`), or kg to calculate price (`kg × perKg`). The preview follows the entered rate; save the daily rate to use it in sales. **Daily sales → Calculate KG from daily rate** fills the optional gas weight using the saved rate for that sale's date (rounded to the sale's 0.01 kg precision). Replace the estimate with actual weighed gas if different. Calculation alone creates no sale.
+
+**Cash & online → Cash & money transfers** records cash sent home, personal advances, money sent online and transfers between Cash / Bank transfer / Easypaisa-JazzCash. Choose From, To, purpose, amount and optional recipient/reference/description. **Outside business → Cash/Bank/Wallet** records money returned or deposited. A Home/Personal advance transfer is an owner/personal money movement and does not reduce operating profit or create a customer invoice. Record actual business expenses or supplier settlement in their own tabs to avoid duplicate entries. Transfers do not claim an actual till or bank balance because opening account balances are excluded.
+
+**Online customer payments** shows existing bank/wallet sale payments and customer collections once, with transaction references. **Receive online customer payment** defaults to Bank transfer and reduces the selected customer's debt. For a new cash/customer/parts/empty-container sale, choose Bank transfer or Easypaisa-JazzCash on that sale instead. These are manually entered records; no bank feed or payment verification is connected.
+
+Daily reports, weekly closings and monthly closings now include Bank/Wallet received amounts, online collections and transfer/net account movement. Saved snapshots store the breakdown. Older saved reports display Not stored rather than recalculating historical snapshots; reopen and save to include it. Internal transfers affect both accounts and leave profit unchanged. Supplier cash settlement continues to be excluded from the overview daily cash total and deducted once in period/monthly net cash.
+
+**Gas & inventory → Record gas loss** records discarded residual gas by size, location, cylinder count and grams per cylinder. The default is **350 g**, editable for a 300/400 g estimate or an actual measurement. Example: **10 cylinders × 350 g = 3.5 kg**. Select Estimated or Measured. Only record gas that was included in stock and is now discarded/unusable; do not deduct gas already excluded by a measurement or another record. Loss reduces gas kg once and leaves container counts, customer balances and cash unchanged. Quantities are stored to 0.001 kg.
+
+Gas loss is included in daily/weekly/monthly gas opening/closing stock. Monthly net profit subtracts its chronological weighted-average purchase cost as a separate non-cash inventory write-off. It is not valued at the daily selling price or charged again as an operating expense. Missing purchase costs leave profit incomplete. New loss records cannot exceed recorded stock at that location. Edits/deletes, backups, private-device synchronization and closing locks cover both transfers and losses.

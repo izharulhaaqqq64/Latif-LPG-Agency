@@ -4,7 +4,7 @@ const EDIT_MAPS={'Daily rate':'dailyRates','Empty opening':'emptyCylinderOpening
 let recordTarget=null,recordManagerType='Sale';
 function editorRows(type){if(EDIT_TYPES[type])return state[EDIT_TYPES[type]];const map=type==='Daily closing'||type==='Weekly closing'?state.periodClosings[EDIT_MAPS[type]]:state[EDIT_MAPS[type]];return Object.entries(map||{}).map(([id,row])=>({...row,id}));}
 function editorRecord(type,id){return editorRows(type).find(r=>r.id===id);}
-function recordLabel(type,r){return [r.date||r.id,r.name||customer(r.customer)?.name||state.suppliers.find(s=>s.id===r.supplier)?.name,r.item||r.note||r.reference||r.capacity||(type==='Part'?r.sellingRate:''),r.amount??r.total??r.qty??''].filter(v=>v!==undefined&&v!=='').join(' · ');}
+function recordLabel(type,r){return [r.date||r.id,r.name||customer(r.customer)?.name||state.suppliers.find(s=>s.id===r.supplier)?.name,r.recipient||r.item||r.note||r.reference||r.capacity||(type==='Part'?r.sellingRate:''),r.amount??r.total??r.qty??''].filter(v=>v!==undefined&&v!=='').join(' · ');}
 function sourceRecord(type,id){
  const r=editorRecord(type,id);if(!r)throw Error('This record no longer exists.');
  if((type==='Gas receipt'||type==='Parts movement')&&r.supplierPurchase)return sourceRecord('Supplier purchase',r.supplierPurchase);
@@ -17,7 +17,7 @@ function sourceRecord(type,id){
 }
 function recordActions(type,id){return `<span class="record-actions"><button type="button" class="card-link" data-edit-record="${esc(id)}" data-edit-type="${esc(type)}">Edit</button><button type="button" class="card-link record-delete" data-delete-record="${esc(id)}" data-edit-type="${esc(type)}">Delete</button></span>`;}
 function openRecordManager(){
- const defaults={Overview:'Sale',Sales:'Sale',Invoices:'Sale',Receipts:'Customer payment','Money & cylinder ledger':'Customer','Supplier credit':'Supplier purchase','Gas & inventory':'Gas receipt','Gas parts':'Part','Cylinder tracking':'Cylinder movement',Expenses:'Expense',Reports:'Monthly closing','Gas calculator':'Gas receipt'};
+ const defaults={Overview:'Sale','Cash & online':'Cash transfer',Sales:'Sale',Invoices:'Sale',Receipts:'Customer payment','Money & cylinder ledger':'Customer','Supplier credit':'Supplier purchase','Gas & inventory':'Gas receipt','Gas parts':'Part','Cylinder tracking':'Cylinder movement',Expenses:'Expense',Reports:'Monthly closing','Gas calculator':'Gas receipt'};
  recordManagerType=defaults[page]||'Sale';action='record-manager';
  showDetail('Edit & delete records',`<p>Choose a record type. Linked stock and ledger records are updated together.</p>${localStorage.getItem('latif-lpg-before-record-change')?'<button type="button" class="button secondary" id="record-download-previous">Download state before last change</button>':''}<label class="field">Record type<select id="manage-record-type">${[...Object.keys(EDIT_TYPES),...Object.keys(EDIT_MAPS)].map(type=>`<option ${type===recordManagerType?'selected':''}>${esc(type)}</option>`).join('')}</select></label><label class="field">Find record<input id="manage-record-search" placeholder="Name, date, reference or item"></label><div id="manage-record-results"></div>`);renderRecordManager();
 }
@@ -130,7 +130,7 @@ function applyRecordDelete({type,id,row:r}){
 // while refusing any new or worsened shortage/overpayment.
 function assertNoWorseTimeline(before,after,label){const keys=new Set([...before.keys(),...after.keys()]);for(const key of keys){const old=before.get(key)||[],next=after.get(key)||[],dates=[...new Set([...old,...next].map(x=>x.date))].sort();let a=0,b=0;for(const date of dates){a+=old.filter(x=>x.date===date).reduce((s,x)=>s+x.qty,0);b+=next.filter(x=>x.date===date).reduce((s,x)=>s+x.qty,0);if(b<Math.min(0,a)-.005)throw Error(label+' would become negative. Correct dependent entries first.');}}}
 function balanceEvents(data,kind){const map=new Map(),add=(key,date,qty)=>{if(!map.has(key))map.set(key,[]);map.get(key).push({date:date||'0000-01-01',qty})};
- if(kind==='gas'){for(const x of data.stock)add(x.warehouse,x.date,x.qty);for(const x of data.sales.filter(s=>s.kind==='Gas'))add(x.channel==='Wholesale'?'Main godown':x.channel==='Supply'?'Supply vehicle':'Shop',x.date,-x.qty)}
+ if(kind==='gas'){for(const l of data.gasLosses||[])add(l.warehouse,l.date,-l.qty);for(const x of data.stock)add(x.warehouse,x.date,x.qty);for(const x of data.sales.filter(s=>s.kind==='Gas'))add(x.channel==='Wholesale'?'Main godown':x.channel==='Supply'?'Supply vehicle':'Shop',x.date,-x.qty)}
  if(kind==='customer'){for(const c of data.customers)add(c.id,c.date,c.opening);for(const x of data.sales)if(x.customer)add(x.customer,x.date,total(x)-x.paid);for(const x of data.creditEntries)add(x.customer,x.date,x.amount);for(const x of data.receipts)add(x.customer,x.date,-x.amount)}
  if(kind==='supplier'){for(const s of data.suppliers)add(s.id,s.date,s.opening);for(const x of data.supplierPurchases)add(x.supplier,x.date,x.total-x.paid);for(const x of data.supplierPayments)add(x.supplier,x.date,-x.amount)}
  if(kind==='parts')for(const x of data.partMovements)add(x.part,x.date,(x.direction==='In'?1:-1)*x.qty);

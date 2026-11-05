@@ -16,5 +16,6 @@
   "receipts-sales.js",
   "reminders.js",
   "record-editor.js",
+  "finance-loss.js",
   "search-receipts.js"
 ]
