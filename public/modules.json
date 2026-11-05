@@ -26,5 +26,6 @@
   "simple-accounts-stock.js",
   "search-receipts.js",
   "overview-polish.js",
-  "location-stock.js"
+  "location-stock.js",
+  "business-polish.js"
 ]

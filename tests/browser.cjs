@@ -329,7 +329,7 @@ const assert = require('node:assert/strict');
  await navigate('Overview');
  const overview=await page.locator('#overview-stock-stats').innerText();
  assert.equal(await page.locator('#overview-stock-stats .stat').count(),8);
- assert.equal(await page.locator('#content table').count(),1);
+ assert.equal(await page.locator('.dashboard-insights table').count(),1);
  assert.match(overview,/Gas stock/);assert.match(overview,/Parts stock value/);assert.match(overview,/Daily expenses/);assert.match(overview,/Empty cylinders available/);
  assert.equal((await page.evaluate(()=>emptyStockSummary())).count,expectedCount-2);
  await navigate('Automatic ledger');
