@@ -1,3 +1,4 @@
+const {navigate:navigateSimple,settingsClick}=require('./navigation.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 (async () => {
@@ -6,8 +7,8 @@ const assert = require('node:assert/strict');
  const navigate=async(name)=>{
   const routes={'Daily cash sales':['Sales','sales:cash'],'Sales & invoices':['Sales','sales:customer'],'Customers & ledger':['Money & cylinder ledger',null],'Automatic ledger':['Money & cylinder ledger',null],'Collections':['Money & cylinder ledger',null],'Godowns':['Gas & inventory',null],'Monthly closing':['Reports','reports:monthly'],'Reports':['Reports','reports:daily']};
   const [root,tab]=routes[name]||[name,null];
-  await page.locator(`nav [data-page="${root}"]`).click();
-  if(tab)await page.locator(`[data-workspace-tab="${tab}"]`).click();
+  await navigateSimple(page,`${root}`);
+  if(tab&&tab!=='sales:cash')await page.locator(`[data-workspace-tab="${tab}"]`).click();
  };
  const assertLedgerBalance=async(expected)=>{const debit=Number((await page.locator('#ledger-total-value').innerText()).replace('Rs.','').replace(/,/g,'').trim()),credit=Number((await page.locator('#ledger-total-credit').innerText()).replace('Rs.','').replace(/,/g,'').trim());assert.equal(debit-credit,expected)};
  const errors=[]; page.on('pageerror',e=>errors.push(e.message));
@@ -52,7 +53,7 @@ const assert = require('node:assert/strict');
  await page.locator('[name=qty]').fill('4');
  assert.equal(await page.locator('[name=paid]').inputValue(),'400');
  await page.locator('[data-payment=credit]').click();
- await page.locator('summary').click();
+ await page.locator('#entry-form summary').click();
  await page.locator('[name=cylOut]').fill('3');
  await page.locator('[name=cylIn]').fill('1');
  await page.locator('#entry-form button[type=submit]').click();
@@ -237,7 +238,7 @@ const assert = require('node:assert/strict');
  await page.locator('#quick-cash-form button[type=submit]').click();
  assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 1,360');
  // One credit workspace replaces three sidebar pages without losing balances.
- assert.equal(await page.locator('nav button').count(),12);
+ assert.equal(await page.locator('nav button').count(),5);
  assert.equal(await page.locator('nav [data-page="Automatic ledger"]').count(),0);
  await navigate('Customers & ledger');
  await page.locator('[data-customer-money="c5"][data-money-kind=debit]').click();
@@ -528,7 +529,7 @@ const assert = require('node:assert/strict');
  await page.locator('[data-open-gas-receipt]').click();assert.match(await page.locator('#form-fields').innerText(),/23.6 kg received/);await page.locator('#close-dialog').click();
  await page.locator('#search').fill('11.8 kg');assert.match(await page.locator('#gas-receipts tbody').innerText(),/Converter receipt ABC/);await page.locator('#search').fill('');
  // Save/Open round-trip, preview/cancel, validation failures and legacy compatibility.
- const saveFile=page.waitForEvent('download');await page.locator('#save-backup').click();const savedFile=await saveFile;
+ const saveFile=page.waitForEvent('download');await settingsClick(page,"save-backup");const savedFile=await saveFile;
  const backupText=require('node:fs').readFileSync(await savedFile.path(),'utf8'),backup=JSON.parse(backupText);assert.equal(backup.format,'latif-lpg-backup');
  assert.equal(await page.evaluate(payload=>validateBackup(payload).sales.length,backup),backup.data.sales.length);
  const validation=await page.evaluate(payload=>{const bad=structuredClone(payload);bad.data.sales[0].customer='missing-customer';let rejected=false;try{validateBackup(bad)}catch{rejected=true}return {rejected,legacy:validateBackup(structuredClone(seed)).dailyRates}},backup);

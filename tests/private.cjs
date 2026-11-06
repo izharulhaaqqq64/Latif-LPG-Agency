@@ -1,3 +1,4 @@
+const {navigate:navigateSimple,settingsClick}=require('./navigation.cjs');
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
@@ -40,8 +41,8 @@ const {createPrivateServer}=require('../lib/private-server');
   assert.equal((await request('/api/state',remote,{method:'PUT',headers:{Cookie:cookie,Origin:'https://foreign.example','X-CSRF-Token':loginData.csrf}})).status,403);
   assert.equal((await request('/api/state',{...remote,revision:0},{method:'PUT',headers:{Cookie:cookie,'X-CSRF-Token':loginData.csrf}})).status,409);
   // Logout revokes the session and removes cached business records.
-  await b.locator('#owner-logout').click();await b.locator('#auth-form').waitFor();assert.equal(await b.evaluate(()=>localStorage.getItem('latif-lpg-v1')),null);assert.equal((await b.request.get(url+'/api/state')).status(),401);
-  await signIn(b);await a.locator('#owner-account').click();await a.locator('#current-owner-password').fill(password);const newPassword='Changed-private-password-1357';await a.locator('#new-owner-password').fill(newPassword);await a.locator('#confirm-owner-password').fill(newPassword);await a.locator('#change-owner-password').click();await a.locator('#entry-dialog').waitFor({state:'hidden'});assert.equal((await b.request.get(url+'/api/state')).status(),401);
+  await settingsClick(b,"owner-logout");await b.locator('#auth-form').waitFor();assert.equal(await b.evaluate(()=>localStorage.getItem('latif-lpg-v1')),null);assert.equal((await b.request.get(url+'/api/state')).status(),401);
+  await signIn(b);await settingsClick(a,"owner-account");await a.locator('#current-owner-password').fill(password);const newPassword='Changed-private-password-1357';await a.locator('#new-owner-password').fill(newPassword);await a.locator('#confirm-owner-password').fill(newPassword);await a.locator('#change-owner-password').click();await a.locator('#entry-dialog').waitFor({state:'hidden'});assert.equal((await b.request.get(url+'/api/state')).status(),401);
   const backups=await a.request.get(url+'/api/backups');assert.equal(backups.status(),200);const list=(await backups.json()).backups;assert.ok(list.some(r=>r.kind==='daily'));assert.ok(list.some(r=>r.kind==='revision'));assert.equal((await a.request.get(url+'/api/backups/'+list[0].kind+'/'+list[0].id)).status(),200);
   assert.deepEqual(errors,[]);await browser.close();browser=null;
   await new Promise(r=>app.server.close(r));app=createPrivateServer({dataDir:dir});assert.equal(app.setupCode,null);url=await listen();

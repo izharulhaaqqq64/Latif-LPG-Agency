@@ -28,5 +28,6 @@
   "overview-polish.js",
   "location-stock.js",
   "business-polish.js",
-  "dashboard-layout.js"
+  "dashboard-layout.js",
+  "simple-navigation.js"
 ]

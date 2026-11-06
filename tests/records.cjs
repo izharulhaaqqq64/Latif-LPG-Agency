@@ -1,3 +1,4 @@
+const {navigate:navigateSimple,settingsClick}=require('./navigation.cjs');
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
@@ -53,9 +54,9 @@ const assert=require('node:assert/strict');
  await edit('Customer','c');await page.locator('#entry-form [name=phone]').fill('03009998888');await save();assert.equal(await page.evaluate(()=>customer('c').phone),'03009998888');
  await page.evaluate(date=>openRecordEdit('Monthly closing',date.slice(0,7)),date);await page.locator('#confirm-record-delete').click();assert.equal(await page.evaluate(()=>Object.keys(state.monthClosings).length),0);
  // Manager is present on every workspace, and delete is always a review step.
- for(const name of ['Overview','Sales','Invoices','Receipts','Money & cylinder ledger','Supplier credit','Gas & inventory','Cylinder tracking','Gas parts','Gas calculator','Expenses','Reports']){await page.locator(`nav [data-page="${name}"]`).click();await page.locator('#manage-records').click();assert.equal(await page.locator('#manage-record-type').isVisible(),true);await page.locator('#close-dialog').click();}
+ for(const name of ['Overview','Sales','Invoices','Receipts','Money & cylinder ledger','Supplier credit','Gas & inventory','Cylinder tracking','Gas parts','Gas calculator','Expenses','Reports']){await navigateSimple(page,`${name}`);await settingsClick(page,"manage-records");assert.equal(await page.locator('#manage-record-type').isVisible(),true);await page.locator('#close-dialog').click();}
  assert.ok(await page.evaluate(()=>!!localStorage.getItem('latif-lpg-before-record-change')));await page.reload();assert.equal(await page.evaluate(()=>customer('c').phone),'03009998888');
  await remove('Part','p');await remove('Supplier','s');await remove('Customer','c');assert.equal(await page.evaluate(()=>state.partItems.length+state.suppliers.length+state.customers.length),0);
- await page.setViewportSize({width:390,height:844});await page.locator('#manage-records').click();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.locator('#close-dialog').click();assert.deepEqual(errors,[]);
+ await page.setViewportSize({width:390,height:844});await settingsClick(page,"manage-records");assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.locator('#close-dialog').click();assert.deepEqual(errors,[]);
  await browser.close();console.log('PASS: atomic edit/delete, linked stock, supplier/customer debt guards, part recosting, closed periods, all-tab manager and persistence.');
 })().catch(e=>{console.error(e);process.exit(1)});
