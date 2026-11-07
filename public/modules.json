@@ -32,5 +32,6 @@
   "simple-navigation.js",
   "retail-credit.js",
   "retire-residual.js",
-  "daily-workspace.js"
+  "daily-workspace.js",
+  "combined-stock.js"
 ]

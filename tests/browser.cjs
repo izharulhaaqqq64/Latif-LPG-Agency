@@ -638,19 +638,19 @@ const assert = require('node:assert/strict');
  await page.locator('[name=phone]').fill('03001112233');await page.locator('[name=address]').fill('Palosy contact test');
  await page.locator('#entry-form button[type=submit]').click();assert.match(await page.locator('.ledger-context').innerText(),/03001112233.*Palosy contact test/);
  await page.locator('#global-search').fill('Palosy contact test');assert.match(await page.locator('#global-search-results').innerText(),/Optional contact client/);await page.locator('#clear-global-search').click();
- // Original and Local quantities are independent for all three current sizes.
+ // Legacy type labels now share one return balance for each cylinder size.
  await navigate('Cylinder tracking');
  for(const size of ['11.8','15','45.4'])for(const type of ['Original','Local']){
   await page.locator('[data-action=cylinder]').click();await page.locator('[name=customer]').selectOption(contactId);
-  await page.locator('[name=capacity]').selectOption(size);await page.locator('[name=cylinderType]').selectOption(type);
+  await page.locator('[name=capacity]').selectOption(size);await page.locator('[name=cylinderType]').selectOption(type,{force:true});
   await page.locator('[name=qty]').fill('1');await page.locator('[name=fullDispatch]').uncheck();await page.locator('dialog details.simple-details > summary').click();await page.locator('[name=note]').fill('');
   await page.locator('#entry-form button[type=submit]').click();assert.equal(await page.locator('dialog').evaluate(e=>e.open),false);
  }
- await page.locator('[data-action=cylinder]').click();await page.locator('[name=customer]').selectOption(contactId);await page.locator('[name=capacity]').selectOption('15');await page.locator('[name=cylinderType]').selectOption('Local');await page.locator('[name=direction]').selectOption('In');await page.locator('[name=returnEmpty]').uncheck();await page.locator('[name=qty]').fill('2');
- await page.locator('#entry-form button[type=submit]').click();assert.match(await page.locator('#form-error').innerText(),/size and type/);
+ await page.locator('[data-action=cylinder]').click();await page.locator('[name=customer]').selectOption(contactId);await page.locator('[name=capacity]').selectOption('15');await page.locator('[name=cylinderType]').selectOption('Local',{force:true});await page.locator('[name=direction]').selectOption('In');await page.locator('[name=returnEmpty]').uncheck();await page.locator('[name=qty]').fill('3');
+ await page.locator('#entry-form button[type=submit]').click();assert.match(await page.locator('#form-error').innerText(),/outstanding/);
  await page.locator('[name=qty]').fill('1');await page.locator('#entry-form button[type=submit]').click();
- assert.equal(await page.evaluate(id=>cylinderTypeBalance(id,'15','Original'),contactId),1);assert.equal(await page.evaluate(id=>cylinderTypeBalance(id,'15','Local'),contactId),0);
- const legacyType=await page.evaluate(id=>{const previous=structuredClone(state);try{state.cylinders.push({id:'legacy-type-check',customer:id,capacity:'45.4',qty:1,direction:'Out',date:today()});const before=cylinderTypeBalance(id,'45.4','Unspecified');recordCylinderMovement({id:'legacy-type-return',customer:id,capacity:'45.4',cylinderType:'Unspecified',qty:1,direction:'In',date:today()},false);return {before,after:cylinderTypeBalance(id,'45.4','Unspecified')}}finally{state=previous}},contactId);assert.deepEqual(legacyType,{before:1,after:0});
+ assert.equal(await page.evaluate(id=>cylinderTypeBalance(id,'15','Original'),contactId),1);assert.equal(await page.evaluate(id=>cylinderTypeBalance(id,'15','Local'),contactId),1);
+ const legacyType=await page.evaluate(id=>{const previous=structuredClone(state);try{state.cylinders.push({id:'legacy-type-check',customer:id,capacity:'45.4',qty:1,direction:'Out',date:today()});const before=cylinderTypeBalance(id,'45.4','Unspecified');recordCylinderMovement({id:'legacy-type-return',customer:id,capacity:'45.4',cylinderType:'Unspecified',qty:1,direction:'In',date:today()},false);return {before,after:cylinderTypeBalance(id,'45.4','Unspecified')}}finally{state=previous}},contactId);assert.deepEqual(legacyType,{before:3,after:2});
  // Distinct invoice tab prints a labelled invoice without adding records.
  await navigate('Invoices');await page.locator('#invoice-search').fill('Small refill online');
  await page.locator('[data-sale-invoice]').first().click();assert.match(await page.locator('.receipt-document-title').innerText(),/^Invoice #INV-/);await page.locator('#close-dialog').click();

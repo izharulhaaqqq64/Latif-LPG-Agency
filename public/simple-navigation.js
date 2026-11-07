@@ -122,8 +122,8 @@ document.addEventListener('submit',e=>{
   if(e.target.id!=='entry-form'||action!=='sale'||!e.target.dataset.simpleSupply)return;
   syncSimpleSupply();
   const f=e.target,source={Retail:'Shop',Wholesale:'Main godown',Supply:'Supply vehicle'}[f.elements.channel.value],stock=cylinderLocationStock()[f.elements.cylinderCapacity.value];
-  if((stock.known||stock.recorded)&&Number(f.elements.cylOut.value)>Math.max(0,stock[source])){
-    e.preventDefault();e.stopImmediatePropagation();document.getElementById('form-error').textContent='Only '+Math.max(0,stock[source])+' full cylinders of this size are recorded at '+source+'. Choose the correct dispatch location or update stock first.';
+  if((stock.known||stock.recorded)&&Number(f.elements.cylOut.value)>Math.max(0,(typeof combinedStockEnabled!=='undefined'&&combinedStockEnabled?stock.total:stock[source]))){
+    e.preventDefault();e.stopImmediatePropagation();document.getElementById('form-error').textContent='Only '+Math.max(0,(typeof combinedStockEnabled!=='undefined'&&combinedStockEnabled?stock.total:stock[source]))+' full cylinders of this size are available. Update cylinder stock first.';
   }
 },true);
 document.getElementById('entry-dialog').addEventListener('close',()=>{delete document.getElementById('entry-form').dataset.simpleSupply;delete document.getElementById('entry-form').dataset.supplyQuote});

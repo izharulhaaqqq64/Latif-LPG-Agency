@@ -17,7 +17,7 @@ function fullCylinderStock(size,variant=null,data=state){
 }
 function recordFullCylinderDispatch(row){
  const size=String(row.capacity);if(!STORED_FULL_STOCK_SIZES.includes(size))return;
- const stock=fullCylinderStock(size),typed=fullCylinderStock(size,row.cylinderType);if(typed.known&&row.qty>typed.qty)throw Error('Not enough full '+row.cylinderType+' cylinders.');if(stock.known&&row.qty>stock.qty)throw Error('Not enough full '+size+' kg cylinders. Update the physical stock count first.');
+ const stock=fullCylinderStock(size),typed=fullCylinderStock(size,row.cylinderType);if(typed.known&&row.qty>typed.qty)throw Error('Not enough full cylinders of this size.');if(stock.known&&row.qty>stock.qty)throw Error('Not enough full '+size+' kg cylinders. Update the physical stock count first.');
  state.fullCylinderMovements.push({id:crypto.randomUUID(),capacity:size,direction:'Out',qty:row.qty,date:row.date,createdAt:row.createdAt,source:row.id,variant:row.cylinderType,warehouse:row.warehouse});
 }
 function recordPlantCylinderReceipt(receipt){

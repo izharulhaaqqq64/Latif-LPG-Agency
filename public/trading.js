@@ -45,7 +45,7 @@ function recordCash(amount,gasQty=0,date=cashDate,method='Cash',description='',r
  validateSaleDate(date);assertDateOpen(date);
  if(!Number.isFinite(amount)||amount<=0)throw Error('Payment must be greater than zero.');
  if(!Number.isFinite(gasQty)||gasQty<0)throw Error('Enter a valid gas weight.');
- if(gasQty>locationStock('Shop'))throw Error('The shop has insufficient gas stock.');
+ if(gasQty>locationStock('Shop'))throw Error('Not enough gas in stock.');
  const s={id:nextInvoice(),date,createdAt:new Date().toISOString(),time:new Date().toLocaleTimeString('en-PK',{timeZone:'Asia/Karachi',hour:'2-digit',minute:'2-digit'}),customer:null,kind:'Gas',channel:'Retail',item:description.trim()||'Gas sale',description:description.trim(),reference:String(reference||'').trim(),method,qty:gasQty,rate:gasQty?amount/gasQty:0,amount:roundAmount(amount),paid:roundAmount(amount),directCash:true,saleBasis:'Per KG'};
  state.sales.unshift(s);
 }
