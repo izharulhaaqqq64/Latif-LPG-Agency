@@ -29,5 +29,7 @@
   "location-stock.js",
   "business-polish.js",
   "dashboard-layout.js",
-  "simple-navigation.js"
+  "simple-navigation.js",
+  "retail-credit.js",
+  "retire-residual.js"
 ]

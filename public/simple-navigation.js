@@ -61,7 +61,7 @@ render=function(){
   document.getElementById('new-sale').hidden=page!=='Sales';
   document.getElementById('new-sale').innerHTML='＋ New sale';
   document.querySelectorAll('[data-customer-money]').forEach(b=>b.textContent=b.dataset.moneyKind==='credit'?'Receive payment':'Add debt');
-  if(page==='Sales')document.getElementById('page-description').textContent='Retail, hotels and shops. Enter each sale once.';
+  if(page==='Sales')document.getElementById('page-description').textContent='Retail and distribution. Enter each sale once.';
   if(group.name==='Stock')document.getElementById('page-description').textContent='Gas, cylinders and parts — quantities, locations and stock updates.';
   document.getElementById('simple-cash-entry').hidden=!['Overview','Sales','Expenses'].includes(page);
 };
@@ -69,26 +69,26 @@ const salesBeforeSimpleNavigation=salesPage;
 salesPage=function(){
   // Keep the all-invoice and empty-container workflows as optional tools.
   if(salesView!=='cash')return salesBeforeSimpleNavigation();
-  const modes=`<div class="simple-sales-modes parts-tabs" aria-label="Sale type">${[['retail','Retail / Walk-in'],['hotel','Hotel supply'],['shop','Shop / Distribution']].map(([id,label])=>`<button type="button" data-simple-sale="${id}" class="${simpleSalesMode===id?'selected':''}">${label}</button>`).join('')}</div>`;
+  const modes=`<div class="simple-sales-modes parts-tabs" aria-label="Sale type">${[['retail','Retail / Walk-in'],['distribution','Distribution']].map(([id,label])=>`<button type="button" data-simple-sale="${id}" class="${simpleSalesMode===id?'selected':''}">${label}</button>`).join('')}</div>`;
   const tools='<details class="simple-sales-tools simple-details"><summary>Other sales options</summary><button type="button" class="button secondary" data-workspace-tab="sales:customer">All customer sales</button> <button type="button" class="button secondary" data-workspace-tab="sales:cylinders">Sell empty containers</button></details>';
   if(simpleSalesMode==='retail')return modes+cashPage()+tools;
-  const hotel=simpleSalesMode==='hotel',rows=state.sales.filter(s=>s.customer&&s.date===cashDate&&(/hotel|restaurant/i.test(customer(s.customer)?.type||'')===hotel));
-  return modes+`<article class="card simple-supply"><div class="section-toolbar"><h2>${hotel?'Hotel supply':'Shop / Distribution'}</h2><label class="field">Sale date<input id="cash-date" type="date" value="${esc(cashDate)}" max="${today()}"></label></div><p>One entry updates gas stock, customer khata, payment and cylinders. New supplies use today's date.</p><div class="simple-action-grid"><button type="button" class="button primary" data-simple-supply="${simpleSalesMode}">＋ New supply</button><button type="button" class="button secondary" data-action="customer">＋ Add customer</button></div></article><article class="card"><div class="card-heading"><h2>Supplies · ${esc(cashDate)}</h2></div>${salesTable(rows)}</article>`+dailyPaymentTotals(cashDate)+dailyCashPanel(cashDate,true)+tools;
+  const rows=state.sales.filter(s=>s.customer&&s.date===cashDate&&!s.retailCredit&&!s.walkIn&&!s.directCash);
+  return modes+`<article class="card simple-supply"><div class="section-toolbar"><h2>Distribution</h2><label class="field">Sale date<input id="cash-date" type="date" value="${esc(cashDate)}" max="${today()}"></label></div><p>One entry updates gas stock, customer khata, payment and cylinders. New supplies use today's date.</p><div class="simple-action-grid"><button type="button" class="button primary" data-simple-supply="${simpleSalesMode}">＋ New supply</button><button type="button" class="button secondary" data-action="customer">＋ Add customer</button></div></article><article class="card"><div class="card-heading"><h2>Supplies · ${esc(cashDate)}</h2></div>${salesTable(rows)}</article>`+dailyPaymentTotals(cashDate)+dailyCashPanel(cashDate,true)+tools;
 };
 const formBeforeSimpleCustomer=openForm;
 openForm=function(kind){
   formBeforeSimpleCustomer(kind);
   if(kind==='customer'&&page==='Sales'&&simpleSalesMode!=='retail'){
-    document.getElementById('entry-form').elements.type.value=simpleSalesMode==='hotel'?'Hotel / restaurant':'Shop / wholesale';
+    document.getElementById('entry-form').elements.type.value='Shop / wholesale';
   }
 };
 function openSimpleSupply(kind){
   if(!state.customers.length){toast('Add a customer first.');openForm('customer');return}
   openForm('sale');const f=document.getElementById('entry-form');f.dataset.simpleSupply=kind;
-  document.getElementById('dialog-title').textContent=kind==='hotel'?'Hotel cylinder supply':'Shop cylinder supply';
-  const preferred=state.customers.find(c=>/hotel|restaurant/i.test(c.type||'')===(kind==='hotel'));
+  document.getElementById('dialog-title').textContent='Distribution cylinder supply';
+  const preferred=state.customers.find(c=>/hotel|restaurant|shop|wholesale/i.test(c.type||''));
   if(preferred)f.elements.customer.value=preferred.id;
-  f.elements.saleBasis.value='Full cylinder';f.elements.channel.value=kind==='hotel'?'Supply':'Wholesale';
+  f.elements.saleBasis.value='Full cylinder';f.elements.channel.value='Supply';
   f.elements.cylOut.value=1;f.elements.cylIn.value=0;
   invoiceCylinderQuote();f.elements.fullCylinderPrice.value=cylinderSellingPrice(f.elements.cylinderCapacity.value,today(),'Wholesale')??'';
   // Move the regular supply fields out of advanced options, in working order.

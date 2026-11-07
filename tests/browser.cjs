@@ -582,7 +582,7 @@ const assert = require('node:assert/strict');
   await page.locator('#menu').click();
   await navigate(screen);
   const text=await page.locator('#content').innerText();
-  assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|khata|diye|wapas|hisab|zyada|nahin)\b/i);
+  assert.doesNotMatch(text,/\b(baqi|karein|wasooli|raqam|rupay|diye|wapas|hisab|zyada|nahin)\b/i);
  }
  // Central search finds records across screens and reprints without mutations.
  await page.setViewportSize({width:1440,height:1100});

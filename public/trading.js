@@ -78,7 +78,7 @@ function submitTrading(e){
  }catch(err){state=before;document.getElementById('form-error').textContent=err.message}
 }
 document.addEventListener('submit',e=>{
- if(e.target.id!=='quick-cash-form')return;e.preventDefault();
+ if(e.target.id!=='quick-cash-form')return;e.preventDefault();if(typeof saveRetailCredit==='function'&&e.target.elements.retailTerms?.value!=='paid'){saveRetailCredit(e.target);return}
  const before=structuredClone(state);
  try{const f=Object.fromEntries(new FormData(e.target));const rate=Number(f.pricePerKg||0),kg=f.gasQty?Number(f.gasQty):rate>0?roundKg(Number(f.amount)/rate):0;recordCash(Number(f.amount),kg,cashDate,f.method,f.description||'',f.reference||'');if(rate>0&&!f.gasQty)state.sales[0].quotedRate=rate;save();render();document.querySelector('#quick-cash-form input').focus();toast('Payment saved')}catch(err){state=before;toast(err.message)}
 });
