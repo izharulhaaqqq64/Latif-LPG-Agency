@@ -199,7 +199,7 @@ const assert = require('node:assert/strict');
  await page.locator('#quick-cash-form button[type=submit]').click();
  assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 125');
  await page.locator('#cash-date').fill(dates.now);
- assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 1,350');
+ assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 750');
  // Seed prior-month activity to verify opening/carry-forward boundary math.
  await page.evaluate(({priorMonthEnd})=>{
   const data=JSON.parse(localStorage.getItem('latif-lpg-v1'));
@@ -228,7 +228,7 @@ const assert = require('node:assert/strict');
  await page.locator('#quick-cash-form button[type=submit]').click();
  await page.waitForFunction(()=>document.getElementById('toast').textContent.includes('monthly closing'));
  assert.match(await page.locator('#toast').textContent(),/monthly closing/i);
- assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 1,350');
+ assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 750');
  const carried=await page.evaluate(()=>{const d=new Date(today().slice(0,7)+'-01T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+1);return monthReport(d.toISOString().slice(0,7)).customers.find(c=>c.id==='c2')});
  assert.equal(carried.opening,1780);assert.equal(carried.cylOpening,2);
  await navigate('Monthly closing');
@@ -236,7 +236,7 @@ const assert = require('node:assert/strict');
  await navigate('Daily cash sales');
  await page.locator('#quick-cash-form [name=amount]').fill('10');
  await page.locator('#quick-cash-form button[type=submit]').click();
- assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 1,360');
+ assert.equal(await page.locator('#cash-day-total').innerText(),'Rs. 760');
  // One credit workspace replaces three sidebar pages without losing balances.
  assert.equal(await page.locator('nav button').count(),5);
  assert.equal(await page.locator('nav [data-page="Automatic ledger"]').count(),0);

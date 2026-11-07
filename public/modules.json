@@ -31,5 +31,6 @@
   "dashboard-layout.js",
   "simple-navigation.js",
   "retail-credit.js",
-  "retire-residual.js"
+  "retire-residual.js",
+  "daily-workspace.js"
 ]
