@@ -33,5 +33,6 @@
   "retail-credit.js",
   "retire-residual.js",
   "daily-workspace.js",
-  "combined-stock.js"
+  "combined-stock.js",
+  "parts-editing.js"
 ]

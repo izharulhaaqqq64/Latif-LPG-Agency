@@ -15,6 +15,15 @@ function partInventory(id){
  }
  return {qty,value:Math.max(0,value),average:qty>0?Math.max(0,value)/qty:0};
 }
+// Availability at the sale date, with stock reserved by later saved sales.
+function partInventoryAt(id,date,data=state){let qty=0,value=0;for(const m of data.partMovements.filter(m=>m.part===id&&m.date<=date)){const sign=m.direction==='In'?1:-1;qty+=sign*m.qty;value+=sign*m.qty*m.cost}return {qty,value:Math.max(0,value),average:qty>0?Math.max(0,value)/qty:0}}
+function partSaleAvailability(id,date,data=state){
+ const daily=new Map();let firstPurchase='';for(const m of data.partMovements.filter(m=>m.part===id)){daily.set(m.date,(daily.get(m.date)||0)+(m.direction==='In'?1:-1)*m.qty);if(m.direction==='In'&&(!firstPurchase||m.date<firstPurchase))firstPurchase=m.date}
+ let qty=0;for(const [d,delta] of daily)if(d<=date)qty+=delta;let available=qty,running=qty;for(const d of [...daily.keys()].filter(d=>d>date).sort()){running+=daily.get(d);available=Math.min(available,running)}
+ return {qty,available:Math.max(0,available),firstPurchase,reserved:available<qty};
+}
+function assertPartSaleStock(id,qty,date,data=state){const a=partSaleAvailability(id,date,data),p=data.partItems.find(p=>p.id===id);if(qty>a.available){const why=a.firstPurchase>date?'Stock first recorded on '+a.firstPurchase+'. Choose the correct sale date, or correct the purchase date if stock existed earlier.':a.reserved?'Later saved sales already use the remaining stock. Add a correctly dated purchase or correct those sales.':'Add a stock purchase on or before the sale date.';throw Error('Sale quantity exceeds available stock on '+date+'. '+(p?.name||'Part')+': '+a.available+' pcs available. '+why)}return partInventoryAt(id,date,data)}
+function partsSellingPrice(id,value){const raw=String(value??'').trim(),price=raw?Number(raw):Number(state.partItems.find(p=>p.id===id)?.sellingRate);if(!Number.isFinite(price)||price<=0)throw Error('Enter a selling price, or save a selling price for this part in Stock → Parts.');return price}
 function partStats(){
  const sales=state.sales.filter(s=>s.partId);
  return {revenue:sales.reduce((a,s)=>a+total(s),0),cost:sales.reduce((a,s)=>a+s.qty*s.costPerUnit,0)};
@@ -33,7 +42,8 @@ function openTradingForm(kind){
  if(kind==='cash')html=field('Sale date','saleDate','date',page==='Sales'&&salesView==='cash'?cashDate:today(),`max="${today()}"`)+field('Payment amount (Rs.)','amount','number','','min="0.01" step="0.01"')+`<label class="field">Price per KG (Rs., optional override)<input name="pricePerKg" type="number" min="0.01" step="0.01" value="${state.dailyRates[page==='Sales'?cashDate:today()]?.perKg??''}"></label><details class="sale-options"><summary>Actual gas weight (optional)</summary><label class="field">Gas sold (kg)<input name="gasQty" type="number" min="0.001" step="0.001" placeholder="Optional"></label></details>${field('Description (optional)','description','text','','maxlength="150"')}${select('Payment method','method',['Cash','Bank transfer','Easypaisa / JazzCash'])}${field('Online transaction reference','reference','text','','maxlength="100"')}<p class="card-subtitle">No customer name is required. Payment is included in sales and collections. Entered kilograms reduce shop gas inventory.</p>`;
  if(kind==='part-new')html=field('Part name','name','text','','maxlength="80"')+field('Opening quantity (pieces)','qty','number','0','min="0" step="1"')+field('Actual / purchase price per piece (Rs.)','cost','number','','min="0" step="0.01"')+field('Selling price per piece (Rs.)','rate','number','','min="0.01" step="0.01"');
  if(kind==='part-buy')html=partSelect()+field('Purchased quantity (pieces)','qty','number','','min="1" step="1"')+field('Actual purchase price per piece (Rs.)','cost','number','','min="0" step="0.01"')+field('Selling price per piece (Rs.)','rate','number',state.partItems[0].sellingRate,'min="0.01" step="0.01"');
- if(kind==='part-sale')html=partSelect()+field('Sale quantity (pieces)','qty','number','1','min="1" step="1"')+field('Selling price per piece (Rs.)','rate','number',state.partItems[0].sellingRate,'min="0.01" step="0.01"')+select('Payment method','method',['Cash','Bank transfer','Easypaisa / JazzCash'])+field('Online transaction reference','reference','text','','maxlength="100"')+'<p class="card-subtitle">Paid sale: payment, inventory deduction and gross profit are recorded automatically.</p>';
+ if(kind==='part-sale')html=partSelect()+field('Sale quantity (pieces)','qty','number','1','min="1" step="1"')+`<label class="field">Selling price per piece (Rs., optional)<input name="rate" type="number" min="0.01" step="0.01" value="${state.partItems[0].sellingRate}" placeholder="Use saved selling price"></label>`+select('Payment method','method',['Cash','Bank transfer','Easypaisa / JazzCash'])+field('Online transaction reference','reference','text','','maxlength="100"')+'<p class="card-subtitle">Paid sale: payment, inventory deduction and gross profit are recorded automatically.</p>';
+ if(kind.startsWith('part-'))html=field(kind==='part-sale'?'Sale date':'Stock / purchase date','partDate','date',today(),`max="${today()}"`)+html;
  document.getElementById('form-fields').innerHTML=html;
  document.getElementById('form-error').textContent='';
  document.querySelector('.dialog-actions').style.display='flex';
@@ -55,8 +65,8 @@ function submitTrading(e){
  try{
   if(action==='cash'){const rate=Number(f.pricePerKg||0),kg=f.gasQty?Number(f.gasQty):rate>0?roundKg(Number(f.amount)/rate):0;recordCash(Number(f.amount),kg,f.saleDate,f.method,f.description||'',f.reference||'');if(rate>0&&!f.gasQty)state.sales[0].quotedRate=rate;cashDate=f.saleDate;}
   else{
-   assertDateOpen(today());
-   const qty=Number(f.qty),cost=Number(f.cost),rate=Number(f.rate);
+   const entryDate=f.partDate||today();validateSaleDate(entryDate);assertDateOpen(entryDate);
+   const qty=Number(f.qty),cost=Number(f.cost),rate=action==='part-sale'?partsSellingPrice(f.part,f.rate):Number(f.rate);
    if(!Number.isInteger(qty)||qty<(action==='part-new'?0:1))throw Error('Quantity must be a whole number of pieces.');
    if(!Number.isFinite(rate)||rate<=0)throw Error('Selling price must be greater than zero.');
    if(action!=='part-sale'&&(!Number.isFinite(cost)||cost<0))throw Error('Purchase cost cannot be negative.');
@@ -66,13 +76,13 @@ function submitTrading(e){
     if(state.partItems.some(p=>p.name.toLowerCase()===name.toLowerCase()))throw Error('This part already exists. Add a stock purchase instead.');
     p={id:crypto.randomUUID(),name,sellingRate:rate};state.partItems.push(p);
    }else{p=state.partItems.find(p=>p.id===f.part);if(!p)throw Error('Select a part.')}
-   const inv=partInventory(p.id),m={id:crypto.randomUUID(),part:p.id,qty,date:today(),createdAt:new Date().toISOString()};
+   const inv=action==='part-sale'?assertPartSaleStock(p.id,qty,entryDate):partInventory(p.id),m={id:crypto.randomUUID(),part:p.id,qty,date:entryDate,createdAt:new Date().toISOString()};
    if(action==='part-sale'){
     if(qty>inv.qty)throw Error('The sale quantity exceeds available stock.');
-    const s={id:nextInvoice(),partId:p.id,costPerUnit:inv.average,customer:null,kind:'Parts',item:p.name,qty,rate,paid:roundAmount(qty*rate),channel:'Retail',method:f.method||'Cash',reference:f.reference||'',date:today(),createdAt:m.createdAt,time:new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})};
+    const s={id:nextInvoice(),partId:p.id,costPerUnit:inv.average,customer:null,kind:'Parts',item:p.name,qty,rate,paid:roundAmount(qty*rate),channel:'Retail',method:f.method||'Cash',reference:f.reference||'',date:entryDate,createdAt:m.createdAt,time:new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})};
     state.sales.unshift(s);Object.assign(m,{direction:'Out',cost:inv.average,rate,invoice:s.id});
    }else{p.sellingRate=rate;Object.assign(m,{direction:'In',cost})}
-   if(qty)state.partMovements.push(m);
+   if(qty)state.partMovements.push(m);recostEditedParts(before);validateRecordChange(before);
   }
   save();document.getElementById('entry-dialog').close();render();toast('Entry saved — totals updated');
  }catch(err){state=before;document.getElementById('form-error').textContent=err.message}

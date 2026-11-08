@@ -14,7 +14,7 @@ const assert=require('node:assert/strict');
  const edit=async(type,id)=>{await page.evaluate(([type,id])=>openRecordEdit(type,id),[type,id]);assert.equal(await page.locator('dialog').evaluate(e=>e.open),true)};
  const remove=async(type,id)=>{await page.evaluate(([type,id])=>openRecordDelete(type,id),[type,id]);await page.locator('#confirm-record-delete').click()};
  const cancel=async()=>page.locator('#cancel-dialog:visible,#close-dialog:visible').first().click();
- await page.locator(`[data-edit-type="Sale"][data-edit-record="${saleId}"]`).click();await page.locator('#entry-form [name=amount]').fill('250');await page.locator('#entry-form [name=qty]').fill('2');await page.locator('#entry-form [name=method]').selectOption('Bank transfer');await save();
+ await page.locator(`[data-edit-type="Sale"][data-edit-record="${saleId}"]`).click();await page.locator('#entry-form [name=amount]').fill('250');await page.locator('#entry-form [name=editReceived]').fill('250');await page.locator('#entry-form [name=qty]').fill('2');await page.locator('#entry-form [name=method]').selectOption('Bank transfer');await save();
  assert.equal(await page.evaluate(()=>gasStock()),998);assert.equal(await page.evaluate(()=>dailyCash(today()).net),0);assert.equal(await page.evaluate(()=>state.sales[0].paid),250);
  await page.locator(`[data-delete-record="${saleId}"]`).click();await page.locator('#close-dialog').click();assert.equal(await page.evaluate(()=>state.sales.length),1);
  await remove('Sale',saleId);assert.equal(await page.evaluate(()=>state.sales.length),0);assert.equal(await page.evaluate(()=>gasStock()),1000);
